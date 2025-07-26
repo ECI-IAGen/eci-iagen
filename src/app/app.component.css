@@ -1,0 +1,200 @@
+/* Welcome Section */
+.welcome-section {
+  padding: 2rem;
+}
+
+.welcome-icon i {
+  font-size: 4rem;
+}
+
+.welcome-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.welcome-stats {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-card i {
+  font-size: 2rem;
+}
+
+.stat-card h5 {
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+/* Section Content */
+.section-content {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.section-title {
+  margin: 0;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.section-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.95rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.section-body {
+  padding: 0;
+}
+
+/* Table Styles */
+.table-container {
+  padding: 1.5rem;
+}
+
+.table {
+  margin: 0;
+}
+
+.table th {
+  font-weight: 600;
+  color: #495057;
+  border-top: none;
+  padding: 1rem 0.75rem;
+}
+
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar i {
+  font-size: 1.5rem;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+/* Badge Styles */
+.badge {
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Loading States */
+.loading-container {
+  padding: 2rem;
+}
+
+.empty-state {
+  padding: 2rem;
+}
+
+/* Coming Soon */
+.coming-soon-container {
+  padding: 2rem;
+}
+
+.coming-soon-icon i {
+  font-size: 4rem;
+}
+
+/* Button Groups */
+.btn-group-sm .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .section-header {
+    padding: 1rem;
+  }
+  
+  .section-header .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .section-actions {
+    justify-content: stretch;
+  }
+  
+  .section-actions .btn {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .table-container {
+    padding: 1rem;
+  }
+  
+  .welcome-section {
+    padding: 1rem;
+  }
+  
+  .welcome-stats .col-6 {
+    margin-bottom: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+  
+  .user-info {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+}
+
+/* Toast Styles */
+.toast.bg-danger {
+  --bs-toast-bg: #dc3545;
+  --bs-toast-color: white;
+}
+
+.toast.bg-success {
+  --bs-toast-bg: #198754;
+  --bs-toast-color: white;
+}

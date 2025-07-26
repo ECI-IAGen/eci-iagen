@@ -1,0 +1,344 @@
+<div class="component-container">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="section-title">
+          <i class="fas fa-chalkboard me-2"></i>Gestión de Clases
+        </h2>
+        <p class="section-subtitle text-muted">Administra las clases y cursos del sistema</p>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-outline-primary me-2" (click)="loadClasses()">
+          <i class="fas fa-refresh me-2"></i>Recargar
+        </button>
+        <button class="btn btn-primary" (click)="openCreateClassModal()">
+          <i class="fas fa-plus me-2"></i>Crear Clase
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-body">
+    <div *ngIf="loading" class="loading-container">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted">Cargando clases...</p>
+      </div>
+    </div>
+
+    <div *ngIf="!loading" class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Clase</th>
+              <th scope="col">Profesor</th>
+              <th scope="col">Semestre</th>
+              <th scope="col">Equipos</th>
+              <th scope="col">Fecha Creación</th>
+              <th scope="col" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let classItem of classes; trackBy: trackByClassId">
+              <td class="align-middle">
+                <span class="badge bg-light text-dark">{{ classItem.id }}</span>
+              </td>
+              <td class="align-middle">
+                <div class="class-info">
+                  <div class="fw-bold">{{ classItem.name }}</div>
+                  <small class="text-muted">{{ classItem.description || 'Sin descripción' }}</small>
+                </div>
+              </td>
+              <td class="align-middle">
+                <div class="professor-info">
+                  <div class="professor-avatar">{{ getProfessorInitial(classItem.professorName) }}</div>
+                  <span>{{ classItem.professorName || 'N/A' }}</span>
+                </div>
+              </td>
+              <td class="align-middle">
+                <span class="semester-badge">{{ classItem.semester || 'N/A' }}</span>
+              </td>
+              <td class="align-middle">
+                <span class="badge bg-info">{{ getTeamCount(classItem) }}</span>
+                <small class="d-block text-muted">{{ getTeamsDisplay(classItem) }}</small>
+              </td>
+              <td class="align-middle">{{ formatDate(classItem.createdAt) }}</td>
+              <td class="align-middle text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-info" 
+                    (click)="viewClass(classItem)"
+                    title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-success" 
+                    (click)="manageTeams(classItem)"
+                    title="Gestionar equipos">
+                    <i class="fas fa-users"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary" 
+                    (click)="openEditClassModal(classItem)"
+                    title="Editar clase">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger" 
+                    (click)="confirmDeleteClass(classItem)"
+                    title="Eliminar clase">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div *ngIf="classes.length === 0" class="empty-state">
+          <div class="text-center py-5">
+            <i class="fas fa-chalkboard text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No hay clases registradas</h5>
+            <p class="text-muted">Comienza creando tu primera clase</p>
+            <button class="btn btn-primary" (click)="openCreateClassModal()">
+              <i class="fas fa-plus me-2"></i>Crear Clase
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+  <div id="class-notification-toast" class="toast" role="alert" [ngClass]="toastClass">
+    <div class="toast-header">
+      <strong class="me-auto">Notificación</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body">
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear clase -->
+<div class="modal fade class-modal" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" 
+     id="createClassModal" tabindex="-1" *ngIf="showCreateModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-chalkboard me-2"></i>Crear Nueva Clase
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="createClass()" #createForm="ngForm">
+        <div class="modal-body">
+          <div class="class-form-section">
+            <h6><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+            <div class="mb-3">
+              <label class="form-label">Nombre de la Clase</label>
+              <input type="text" class="form-control" [(ngModel)]="classForm.name" name="name" required 
+                     placeholder="Ej: Programación Avanzada 2025-1" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Descripción</label>
+              <textarea class="form-control" [(ngModel)]="classForm.description" name="description" rows="3" 
+                        placeholder="Descripción de la clase (opcional)"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Semestre</label>
+              <input type="text" class="form-control" [(ngModel)]="classForm.semester" name="semester"
+                     placeholder="Ej: 2025-1" />
+            </div>
+          </div>
+          
+          <div class="class-form-section">
+            <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
+            <div class="mb-3">
+              <label class="form-label">Seleccionar Profesor</label>
+              <select class="form-select" [(ngModel)]="classForm.professorId" name="professorId" required>
+                <option value="">Seleccione un profesor</option>
+                <option *ngFor="let professor of professors" [value]="professor.id">{{ professor.name }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="class-form-section">
+            <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
+            <div class="team-selection-container">
+              <div *ngFor="let team of teams" class="team-checkbox">
+                <input type="checkbox" 
+                       [checked]="isTeamSelected(team.id)"
+                       (change)="onTeamSelectionChange($event, team.id)"
+                       [id]="'team-create-' + team.id">
+                <label [for]="'team-create-' + team.id">{{ team.name }}</label>
+              </div>
+              <p *ngIf="teams.length === 0" class="text-muted">No hay equipos disponibles</p>
+            </div>
+            <small class="form-text text-muted">
+              Selecciona los equipos que estarán inscritos en esta clase (opcional)
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid">
+            <i class="fas fa-save me-2"></i>Crear Clase
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar clase -->
+<div class="modal fade class-modal" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" 
+     id="editClassModal" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>Editar Clase
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="updateClass()" #editForm="ngForm">
+        <div class="modal-body">
+          <div class="class-form-section">
+            <h6><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+            <div class="mb-3">
+              <label class="form-label">ID de la Clase</label>
+              <input type="text" class="form-control" [value]="selectedClass?.id" disabled />
+              <div class="form-text">El ID no se puede modificar</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nombre de la Clase</label>
+              <input type="text" class="form-control" [(ngModel)]="classForm.name" name="name" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Descripción</label>
+              <textarea class="form-control" [(ngModel)]="classForm.description" name="description" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Semestre</label>
+              <input type="text" class="form-control" [(ngModel)]="classForm.semester" name="semester" />
+            </div>
+          </div>
+          
+          <div class="class-form-section">
+            <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
+            <div class="mb-3">
+              <label class="form-label">Seleccionar Profesor</label>
+              <select class="form-select" [(ngModel)]="classForm.professorId" name="professorId" required>
+                <option value="">Seleccione un profesor</option>
+                <option *ngFor="let professor of professors" [value]="professor.id">{{ professor.name }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="class-form-section">
+            <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
+            <div class="team-selection-container">
+              <div *ngFor="let team of teams" class="team-checkbox">
+                <input type="checkbox" 
+                       [checked]="isTeamSelected(team.id)"
+                       (change)="onTeamSelectionChange($event, team.id)"
+                       [id]="'team-edit-' + team.id">
+                <label [for]="'team-edit-' + team.id">{{ team.name }}</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!editForm.valid">
+            <i class="fas fa-save me-2"></i>Actualizar Clase
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles de la clase -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" 
+     id="viewClassModal" tabindex="-1" *ngIf="showViewModal && selectedClass">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-chalkboard me-2"></i>Detalles de la Clase
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="class-card">
+          <div class="class-header">
+            <h4>{{ selectedClass.name }}</h4>
+            <span class="semester-badge">{{ selectedClass.semester || 'Sin semestre' }}</span>
+          </div>
+          <div class="class-body">
+            <div class="class-description">
+              {{ selectedClass.description || 'Sin descripción disponible' }}
+            </div>
+            
+            <div class="class-stats">
+              <div class="stat-item">
+                <div class="stat-number">{{ selectedClass.id }}</div>
+                <div class="stat-label">ID</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">{{ getTeamCount(selectedClass) }}</div>
+                <div class="stat-label">Equipos</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">{{ formatDate(selectedClass.createdAt) }}</div>
+                <div class="stat-label">Creada</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
+              <div class="professor-info">
+                <div class="professor-avatar">{{ getProfessorInitial(selectedClass.professorName) }}</div>
+                <span>{{ selectedClass.professorName || 'No asignado' }}</span>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
+              <div class="team-list">
+                <span *ngFor="let teamName of selectedClass.teamNames" class="team-badge">{{ teamName }}</span>
+                <span *ngIf="!selectedClass.teamNames || selectedClass.teamNames.length === 0" class="text-muted">Sin equipos inscritos</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="editFromView()">
+          <i class="fas fa-edit me-2"></i>Editar Clase
+        </button>
+        <button type="button" class="btn btn-success" (click)="manageTeamsFromView()">
+          <i class="fas fa-users me-2"></i>Gestionar Equipos
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" 
+     (click)="closeModal()"></div>

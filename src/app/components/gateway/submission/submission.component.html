@@ -1,0 +1,326 @@
+<div class="component-container">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="section-title">
+          <i class="fas fa-file-upload me-2"></i>Gestión de Entregas
+        </h2>
+        <p class="section-subtitle text-muted">Administra las entregas de asignaciones del sistema</p>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-outline-primary me-2" (click)="loadSubmissions()">
+          <i class="fas fa-refresh me-2"></i>Recargar
+        </button>
+        <button class="btn btn-primary" (click)="showCreateModal()">
+          <i class="fas fa-plus me-2"></i>Nueva Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-body">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando entregas...</p>
+    </div>
+
+    <!-- Data Table -->
+    <div *ngIf="!loading" class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Asignación</th>
+            <th>Equipo</th>
+            <th>Archivo</th>
+            <th>Fecha Entrega</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let submission of submissions" [attr.data-id]="submission.id">
+            <td>{{ submission.id }}</td>
+            <td class="text-truncate" [title]="getAssignmentTitle(submission)">
+              {{ getAssignmentTitle(submission) }}
+            </td>
+            <td class="text-truncate" [title]="getTeamName(submission)">
+              {{ getTeamName(submission) }}
+            </td>
+            <td class="text-truncate">
+              <a *ngIf="submission.fileUrl" 
+                 [href]="submission.fileUrl" 
+                 class="file-link" 
+                 [title]="getFileName(submission.fileUrl)" 
+                 target="_blank">
+                <i class="fas fa-file me-1"></i>{{ getFileName(submission.fileUrl) }}
+              </a>
+              <span *ngIf="!submission.fileUrl" class="text-muted">Sin archivo</span>
+            </td>
+            <td class="date-display">
+              {{ formatDate(submission.submittedAt) }}
+            </td>
+            <td class="action-buttons">
+              <button class="btn btn-sm btn-outline-info me-1" 
+                      (click)="viewSubmission(submission.id)" 
+                      title="Ver detalles">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-warning me-1" 
+                      (click)="editSubmission(submission.id)" 
+                      title="Editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" 
+                      (click)="deleteSubmission(submission.id)" 
+                      title="Eliminar">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="submissions.length === 0">
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+              No hay entregas registradas
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear entrega -->
+<div class="modal" [class.show]="showCreateSubmissionModal" 
+     [style.display]="showCreateSubmissionModal ? 'block' : 'none'" 
+     *ngIf="showCreateSubmissionModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-file-upload me-2"></i>Crear Entrega
+        </h5>
+        <button type="button" class="btn-close" (click)="closeCreateModal()"></button>
+      </div>
+      <form (ngSubmit)="createSubmission()" #createForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Asignación *</label>
+            <select class="form-select" 
+                    [(ngModel)]="newSubmission.assignmentId" 
+                    name="assignmentId" 
+                    required>
+              <option value="">Seleccione una asignación</option>
+              <option *ngFor="let assignment of assignments" 
+                      [value]="assignment.id">
+                {{ assignment.title }}
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipo *</label>
+            <select class="form-select" 
+                    [(ngModel)]="newSubmission.teamId" 
+                    name="teamId" 
+                    required>
+              <option value="">Seleccione un equipo</option>
+              <option *ngFor="let team of teams" 
+                      [value]="team.id">
+                {{ team.name }}
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">URL del Archivo *</label>
+            <input type="url" 
+                   class="form-control" 
+                   [(ngModel)]="newSubmission.fileUrl" 
+                   name="fileUrl" 
+                   placeholder="https://github.com/usuario/repositorio o https://ejemplo.com/archivo.zip" 
+                   required />
+            <div class="form-text">URL del archivo o repositorio</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha de Entrega</label>
+            <input type="datetime-local" 
+                   class="form-control" 
+                   [value]="getCurrentDateTime()" 
+                   readonly />
+            <div class="form-text">Se establece automáticamente la fecha actual</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="!createForm.form.valid || submitting">
+            <i class="fas fa-plus me-2"></i>
+            <span *ngIf="!submitting">Crear Entrega</span>
+            <span *ngIf="submitting">
+              <span class="spinner-border spinner-border-sm me-2"></span>Creando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles -->
+<div class="modal" [class.show]="showViewSubmissionModal" 
+     [style.display]="showViewSubmissionModal ? 'block' : 'none'" 
+     *ngIf="showViewSubmissionModal && selectedSubmission">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles de la Entrega</h5>
+        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="detail-item mb-3">
+              <strong class="detail-label">ID:</strong> 
+              <span class="detail-value">{{ selectedSubmission.id }}</span>
+            </div>
+            <div class="detail-item mb-3">
+              <strong class="detail-label">Asignación:</strong> 
+              <span class="detail-value">{{ getAssignmentTitle(selectedSubmission) }}</span>
+            </div>
+            <div class="detail-item mb-3">
+              <strong class="detail-label">Equipo:</strong> 
+              <span class="detail-value">{{ getTeamName(selectedSubmission) }}</span>
+            </div>
+            <div class="detail-item mb-3">
+              <strong class="detail-label">Fecha de Entrega:</strong> 
+              <span class="detail-value">{{ formatDate(selectedSubmission.submittedAt) }}</span>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="detail-item mb-3">
+              <strong class="detail-label">URL del Archivo:</strong> 
+              <div class="mt-2">
+                <a *ngIf="selectedSubmission.fileUrl" 
+                   [href]="selectedSubmission.fileUrl" 
+                   target="_blank" 
+                   class="btn btn-outline-primary btn-sm">
+                  <i class="fas fa-external-link-alt me-2"></i>Ver archivo
+                </a>
+                <span *ngIf="!selectedSubmission.fileUrl" class="text-muted">Sin archivo</span>
+              </div>
+            </div>
+            <div class="detail-item mb-3" *ngIf="selectedSubmission.className">
+              <strong class="detail-label">Clase:</strong> 
+              <span class="detail-value">{{ selectedSubmission.className }}</span>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="selectedSubmission.gitHubUrl" class="mt-4">
+          <hr>
+          <div class="github-info">
+            <h6><i class="fab fa-github me-2"></i>Información de GitHub</h6>
+            <p><strong>Repositorio:</strong> 
+              <a [href]="selectedSubmission.gitHubUrl" target="_blank" class="btn btn-outline-dark btn-sm ms-2">
+                <i class="fab fa-github me-2"></i>Ver repositorio
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeViewModal()">
+          <i class="fas fa-times me-2"></i>Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar entrega -->
+<div class="modal" [class.show]="showEditSubmissionModal" 
+     [style.display]="showEditSubmissionModal ? 'block' : 'none'" 
+     *ngIf="showEditSubmissionModal && selectedSubmission">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-edit me-2"></i>Editar Entrega
+        </h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <form (ngSubmit)="updateSubmission()" #editForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Asignación *</label>
+            <select class="form-select" 
+                    [(ngModel)]="editingSubmission.assignmentId" 
+                    name="assignmentId" 
+                    required>
+              <option value="">Seleccione una asignación</option>
+              <option *ngFor="let assignment of assignments" 
+                      [value]="assignment.id">
+                {{ assignment.title }}
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipo *</label>
+            <select class="form-select" 
+                    [(ngModel)]="editingSubmission.teamId" 
+                    name="teamId" 
+                    required>
+              <option value="">Seleccione un equipo</option>
+              <option *ngFor="let team of teams" 
+                      [value]="team.id">
+                {{ team.name }}
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">URL del Archivo *</label>
+            <input type="url" 
+                   class="form-control" 
+                   [(ngModel)]="editingSubmission.fileUrl" 
+                   name="fileUrl" 
+                   placeholder="https://github.com/usuario/repositorio o https://ejemplo.com/archivo.zip" 
+                   required />
+            <div class="form-text">URL del archivo o repositorio</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha de Entrega</label>
+            <input type="datetime-local" 
+                   class="form-control" 
+                   [value]="formatDateForInput(selectedSubmission.submittedAt)" 
+                   readonly />
+            <div class="form-text">La fecha de entrega no puede modificarse</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeEditModal()">
+            <i class="fas fa-times me-2"></i>Cancelar
+          </button>
+          <button type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="!editForm.form.valid || submitting">
+            <i class="fas fa-save me-2"></i>
+            <span *ngIf="!submitting">Actualizar</span>
+            <span *ngIf="submitting">
+              <span class="spinner-border spinner-border-sm me-2"></span>Actualizando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop para modales -->
+<div class="modal-backdrop" 
+     [class.show]="showCreateSubmissionModal || showViewSubmissionModal || showEditSubmissionModal"
+     [style.display]="(showCreateSubmissionModal || showViewSubmissionModal || showEditSubmissionModal) ? 'block' : 'none'"
+     (click)="closeAllModals()">
+</div>

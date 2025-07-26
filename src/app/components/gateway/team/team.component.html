@@ -1,0 +1,241 @@
+<div class="component-container">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="section-title">
+          <i class="fas fa-user-group me-2"></i>Gestión de Equipos
+        </h2>
+        <p class="section-subtitle text-muted">Administra los equipos de trabajo del sistema</p>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-outline-primary me-2" (click)="loadTeams()">
+          <i class="fas fa-refresh me-2"></i>Recargar
+        </button>
+        <button class="btn btn-primary" (click)="openCreateTeamModal()">
+          <i class="fas fa-plus me-2"></i>Crear Equipo
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-body">
+    <div *ngIf="loading" class="loading-container">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted">Cargando equipos...</p>
+      </div>
+    </div>
+
+    <div *ngIf="!loading" class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Miembros</th>
+              <th scope="col" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let team of teams; trackBy: trackByTeamId">
+              <td class="align-middle">
+                <span class="badge bg-light text-dark">{{ team.id }}</span>
+              </td>
+              <td class="align-middle">
+                <div class="team-info">
+                  <div class="fw-bold" [title]="team.name">{{ team.name }}</div>
+                </div>
+              </td>
+              <td class="align-middle">
+                <div class="member-info">
+                  <span class="member-count">{{ getMemberCount(team) }} miembros</span>
+                  <small *ngIf="getMemberCount(team) > 0" class="d-block text-muted text-truncate">
+                    {{ getMemberNames(team) }}
+                  </small>
+                </div>
+              </td>
+              <td class="align-middle text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-info" 
+                    (click)="viewTeam(team)"
+                    title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary" 
+                    (click)="openEditTeamModal(team)"
+                    title="Editar equipo">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger" 
+                    (click)="confirmDeleteTeam(team)"
+                    title="Eliminar equipo">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div *ngIf="teams.length === 0" class="empty-state">
+          <div class="text-center py-5">
+            <i class="fas fa-user-group text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No hay equipos registrados</h5>
+            <p class="text-muted">Comienza creando tu primer equipo</p>
+            <button class="btn btn-primary" (click)="openCreateTeamModal()">
+              <i class="fas fa-plus me-2"></i>Crear Equipo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+  <div id="team-notification-toast" class="toast" role="alert" [ngClass]="toastClass">
+    <div class="toast-header">
+      <strong class="me-auto">Notificación</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body">
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear equipo -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" 
+     id="createTeamModal" tabindex="-1" *ngIf="showCreateModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-group me-2"></i>Crear Equipo
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="createTeam()" #createForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre del Equipo</label>
+            <input type="text" class="form-control" [(ngModel)]="teamForm.name" name="name" required 
+                   placeholder="Ej: Equipo Alpha, Desarrolladores Frontend" />
+            <div class="form-text">El nombre debe ser único en el sistema</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Miembros del Equipo</label>
+            <div class="user-selection-container">
+              <div *ngFor="let user of users" class="user-checkbox">
+                <input type="checkbox" 
+                       [checked]="isUserSelected(user.id)"
+                       (change)="onUserSelectionChange($event, user.id)"
+                       [id]="'user-create-' + user.id">
+                <label [for]="'user-create-' + user.id">
+                  {{ user.name }} {{ user.email ? '(' + user.email + ')' : '' }}
+                </label>
+              </div>
+              <p *ngIf="users.length === 0" class="text-muted">No hay usuarios disponibles</p>
+            </div>
+            <div class="form-text">Selecciona los usuarios que formarán parte del equipo</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid">
+            <i class="fas fa-plus me-2"></i>Crear Equipo
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar equipo -->
+<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" 
+     id="editTeamModal" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Equipo</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="updateTeam()" #editForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre del Equipo</label>
+            <input type="text" class="form-control" [(ngModel)]="teamForm.name" name="name" required />
+            <div class="form-text">El nombre debe ser único en el sistema</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Miembros del Equipo</label>
+            <div class="user-selection-container">
+              <div *ngFor="let user of users" class="user-checkbox">
+                <input type="checkbox" 
+                       [checked]="isUserSelected(user.id)"
+                       (change)="onUserSelectionChange($event, user.id)"
+                       [id]="'user-edit-' + user.id">
+                <label [for]="'user-edit-' + user.id">
+                  {{ user.name }} {{ user.email ? '(' + user.email + ')' : '' }}
+                </label>
+              </div>
+            </div>
+            <div class="form-text">Selecciona los usuarios que formarán parte del equipo</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!editForm.valid">Actualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles del equipo -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" 
+     id="viewTeamModal" tabindex="-1" *ngIf="showViewModal && selectedTeam">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles del Equipo</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-12">
+            <strong>ID:</strong> {{ selectedTeam.id }}<br>
+            <strong>Nombre:</strong> {{ selectedTeam.name }}<br>
+            <strong>Número de miembros:</strong> {{ getMemberCount(selectedTeam) }}<br><br>
+            <strong>Miembros:</strong><br>
+            <div class="member-list">
+              <div *ngFor="let user of selectedTeam.users" class="member-item">
+                {{ user.name }} {{ user.email ? '(' + user.email + ')' : '' }}
+              </div>
+              <div *ngIf="!selectedTeam.users || selectedTeam.users.length === 0" class="text-muted">
+                Sin miembros
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" 
+     (click)="closeModal()"></div>

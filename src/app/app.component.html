@@ -1,0 +1,96 @@
+<app-layout 
+  [currentSection]="currentSection"
+  (refresh)="refreshData()"
+  (sectionChange)="showSection($event)">
+  
+  <!-- Mensaje de bienvenida por defecto -->
+  <div *ngIf="currentSection === ''" class="welcome-section">
+    <div class="text-center py-5">
+      <div class="welcome-icon mb-4">
+        <i class="fas fa-graduation-cap text-primary"></i>
+      </div>
+      <h2 class="welcome-title mb-3">Bienvenido al Sistema ECI IAGen</h2>
+      <p class="lead text-muted mb-4">Sistema de gestión educativa con inteligencia artificial</p>
+    </div>
+  </div>
+
+  <!-- Sección de Usuarios -->
+  <div *ngIf="currentSection === 'users'" class="section-content">
+    <app-user></app-user>
+  </div>
+
+  <!-- Sección de Roles -->
+  <div *ngIf="currentSection === 'roles'" class="section-content">
+    <app-role></app-role>
+  </div>
+
+  <!-- Sección de Clases -->
+  <div *ngIf="currentSection === 'classes'" class="section-content">
+    <app-class></app-class>
+  </div>
+
+  <!-- Sección de Equipos -->
+  <div *ngIf="currentSection === 'teams'" class="section-content">
+    <app-team></app-team>
+  </div>
+
+  <!-- Sección de Asignaciones -->
+  <div *ngIf="currentSection === 'assignments'" class="section-content">
+    <app-assignment></app-assignment>
+  </div>
+
+  <!-- Sección de Entregas -->
+  <div *ngIf="currentSection === 'submissions'" class="section-content">
+    <app-submission></app-submission>
+  </div>
+
+  <!-- Sección de Evaluaciones -->
+  <div *ngIf="currentSection === 'evaluations'" class="section-content">
+    <app-evaluation></app-evaluation>
+  </div>
+
+  <!-- Sección de Retroalimentación -->
+  <div *ngIf="currentSection === 'feedback'" class="section-content">
+    <app-feedback></app-feedback>
+  </div>
+
+  <!-- Placeholder para secciones no implementadas -->
+  <div *ngIf="currentSection !== '' && currentSection !== 'users' && currentSection !== 'roles' && currentSection !== 'classes' && currentSection !== 'teams' && currentSection !== 'assignments' && currentSection !== 'submissions' && currentSection !== 'evaluations' && currentSection !== 'feedback'" class="section-content">
+    <div class="section-header">
+      <h2 class="section-title">
+        <i class="fas fa-cog me-2"></i>{{ getSectionTitle(currentSection) }}
+      </h2>
+      <p class="section-subtitle text-muted">Esta funcionalidad estará disponible próximamente</p>
+    </div>
+    
+    <div class="section-body">
+      <div class="coming-soon-container">
+        <div class="text-center py-5">
+          <div class="coming-soon-icon mb-4">
+            <i class="fas fa-tools text-muted"></i>
+          </div>
+          <h4 class="text-muted mb-3">En Desarrollo</h4>
+          <p class="text-muted mb-4">Estamos trabajando en esta funcionalidad</p>
+          <button class="btn btn-outline-primary" (click)="showSection('users')">
+            <i class="fas fa-arrow-left me-2"></i>Volver a Usuarios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-layout>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+  <div id="notification-toast" class="toast" role="alert" [ngClass]="toastClass">
+    <div class="toast-header">
+      <strong class="me-auto">Notificación</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body">
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>
+
+<router-outlet />

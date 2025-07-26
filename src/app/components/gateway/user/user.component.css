@@ -1,0 +1,107 @@
+.component-container {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #212529;
+}
+
+.section-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+}
+
+.section-body {
+  padding: 1.5rem;
+}
+
+.loading-container {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-container {
+  background: white;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  font-size: 1.5rem;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.empty-state {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+/* Modal styles */
+.modal {
+  z-index: 1050;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.form-check-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+}
+
+.form-check {
+  margin-bottom: 0.5rem;
+}
+
+.form-check:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    padding: 1rem;
+  }
+  
+  .section-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .section-actions .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+  
+  .section-body {
+    padding: 1rem;
+  }
+}

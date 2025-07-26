@@ -1,0 +1,189 @@
+<div class="component-container">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="section-title">
+          <i class="fas fa-user-tag me-2"></i>Gestión de Roles
+        </h2>
+        <p class="section-subtitle text-muted">Administra los roles del sistema</p>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-outline-primary me-2" (click)="loadRoles()">
+          <i class="fas fa-refresh me-2"></i>Recargar
+        </button>
+        <button class="btn btn-primary" (click)="openCreateRoleModal()">
+          <i class="fas fa-plus me-2"></i>Crear Rol
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-body">
+    <div *ngIf="loading" class="loading-container">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted">Cargando roles...</p>
+      </div>
+    </div>
+
+    <div *ngIf="!loading" class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let role of roles; trackBy: trackByRoleId">
+              <td class="align-middle">
+                <span class="badge bg-light text-dark">{{ role.id }}</span>
+              </td>
+              <td class="align-middle">
+                <span class="badge bg-secondary">{{ role.name }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-info" 
+                    (click)="viewRole(role)"
+                    title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary" 
+                    (click)="openEditRoleModal(role)"
+                    title="Editar rol">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger" 
+                    (click)="confirmDeleteRole(role)"
+                    title="Eliminar rol">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div *ngIf="roles.length === 0" class="empty-state">
+          <div class="text-center py-5">
+            <i class="fas fa-user-tag text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No hay roles registrados</h5>
+            <p class="text-muted">Comienza creando tu primer rol</p>
+            <button class="btn btn-primary" (click)="openCreateRoleModal()">
+              <i class="fas fa-plus me-2"></i>Crear Rol
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+  <div id="role-notification-toast" class="toast" role="alert" [ngClass]="toastClass">
+    <div class="toast-header">
+      <strong class="me-auto">Notificación</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body">
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear rol -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" 
+     id="createRoleModal" tabindex="-1" *ngIf="showCreateModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-tag me-2"></i>Crear Rol
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="createRole()" #createForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre del Rol</label>
+            <input type="text" class="form-control" [(ngModel)]="roleForm.name" name="name" required 
+                   placeholder="Ej: Administrador, Estudiante, Profesor" />
+            <div class="form-text">El nombre debe ser único en el sistema</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid">
+            <i class="fas fa-plus me-2"></i>Crear Rol
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar rol -->
+<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" 
+     id="editRoleModal" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Rol</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="updateRole()" #editForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre del Rol</label>
+            <input type="text" class="form-control" [(ngModel)]="roleForm.name" name="name" required />
+            <div class="form-text">El nombre debe ser único en el sistema</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!editForm.valid">Actualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles del rol -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" 
+     id="viewRoleModal" tabindex="-1" *ngIf="showViewModal && selectedRole">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles del Rol</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-12">
+            <strong>ID:</strong> {{ selectedRole.id }}<br>
+            <strong>Nombre:</strong> <span class="badge bg-secondary">{{ selectedRole.name }}</span><br>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" 
+     (click)="closeModal()"></div>

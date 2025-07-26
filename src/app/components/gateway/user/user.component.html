@@ -1,0 +1,255 @@
+<div class="component-container">
+  <div class="section-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="section-title">
+          <i class="fas fa-users me-2"></i>Gestión de Usuarios
+        </h2>
+        <p class="section-subtitle text-muted">Administra los usuarios del sistema</p>
+      </div>
+      <div class="section-actions">
+        <button class="btn btn-outline-success me-2" (click)="showExcelImportModal()">
+          <i class="fas fa-file-excel me-2"></i>Importar Excel
+        </button>
+        <button class="btn btn-outline-primary me-2" (click)="loadUsers()">
+          <i class="fas fa-refresh me-2"></i>Recargar
+        </button>
+        <button class="btn btn-primary" (click)="openCreateUserModal()">
+          <i class="fas fa-plus me-2"></i>Crear Usuario
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="section-body">
+    <div *ngIf="loading" class="loading-container">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="text-muted">Cargando usuarios...</p>
+      </div>
+    </div>
+
+    <div *ngIf="!loading" class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Email</th>
+              <th scope="col">Rol</th>
+              <th scope="col" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users; trackBy: trackByUserId">
+              <td class="align-middle">
+                <span class="badge bg-light text-dark">{{ user.id }}</span>
+              </td>
+              <td class="align-middle">
+                <div class="user-info">
+                  <div class="user-avatar">
+                    <i class="fas fa-user-circle text-muted"></i>
+                  </div>
+                  <span class="user-name">{{ user.name }}</span>
+                </div>
+              </td>
+              <td class="align-middle">
+                <span class="text-muted">{{ user.email }}</span>
+              </td>
+              <td class="align-middle">
+                <span class="badge" [ngClass]="getRoleBadgeClass(user.roleName)">
+                  {{ user.roleName || 'Sin rol' }}
+                </span>
+              </td>
+              <td class="align-middle text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-info" 
+                    (click)="viewUser(user)"
+                    title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-primary" 
+                    (click)="openEditUserModal(user)"
+                    title="Editar usuario">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger" 
+                    (click)="confirmDeleteUser(user)"
+                    title="Eliminar usuario">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div *ngIf="users.length === 0" class="empty-state">
+          <div class="text-center py-5">
+            <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+            <h5 class="text-muted">No hay usuarios registrados</h5>
+            <p class="text-muted">Comienza creando tu primer usuario</p>
+            <button class="btn btn-primary" (click)="openCreateUserModal()">
+              <i class="fas fa-plus me-2"></i>Crear Usuario
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+  <div id="user-notification-toast" class="toast" role="alert" [ngClass]="toastClass">
+    <div class="toast-header">
+      <strong class="me-auto">Notificación</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body">
+      {{ toastMessage }}
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear usuario -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" 
+     id="createUserModal" tabindex="-1" *ngIf="showCreateModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Usuario</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="createUser()" #createForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" [(ngModel)]="userForm.name" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="userForm.email" name="email" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <select class="form-select" [(ngModel)]="userForm.roleId" name="roleId" required>
+              <option value="">Seleccione un rol</option>
+              <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipos</label>
+            <div class="form-check-container">
+              <div *ngFor="let team of teams" class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="isTeamSelected(team.id)"
+                       (change)="onTeamSelectionChange($event, team.id)"
+                       [id]="'team-create-' + team.id">
+                <label class="form-check-label" [for]="'team-create-' + team.id">
+                  {{ team.name }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!createForm.valid">Crear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar usuario -->
+<div class="modal fade" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" 
+     id="editUserModal" tabindex="-1" *ngIf="showEditModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Usuario</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form (ngSubmit)="updateUser()" #editForm="ngForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" class="form-control" [(ngModel)]="userForm.name" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="userForm.email" name="email" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rol</label>
+            <select class="form-select" [(ngModel)]="userForm.roleId" name="roleId" required>
+              <option value="">Seleccione un rol</option>
+              <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Equipos</label>
+            <div class="form-check-container">
+              <div *ngFor="let team of teams" class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="isTeamSelected(team.id)"
+                       (change)="onTeamSelectionChange($event, team.id)"
+                       [id]="'team-edit-' + team.id">
+                <label class="form-check-label" [for]="'team-edit-' + team.id">
+                  {{ team.name }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!editForm.valid">Actualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles del usuario -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" 
+     id="viewUserModal" tabindex="-1" *ngIf="showViewModal && selectedUser">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles del Usuario</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <strong>ID:</strong> {{ selectedUser.id }}<br>
+            <strong>Nombre:</strong> {{ selectedUser.name }}<br>
+            <strong>Email:</strong> {{ selectedUser.email || 'Sin email' }}<br>
+          </div>
+          <div class="col-md-6">
+            <strong>Rol:</strong> {{ selectedUser.roleName || 'Sin rol' }}<br>
+            <strong>Equipos:</strong> {{ getTeamNames(selectedUser) }}<br>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" 
+     (click)="closeModal()"></div>
