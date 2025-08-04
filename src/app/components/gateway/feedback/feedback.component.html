@@ -1,0 +1,339 @@
+<!-- Sección de Retroalimentaciones -->
+<div class="content-section">
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="fas fa-comments me-2"></i>Gestión de Retroalimentación</h2>
+    <div>
+      <button class="btn btn-success me-2" (click)="downloadFeedbacks()">
+        <i class="fas fa-download me-2"></i>Descargar Retroalimentaciones
+      </button>
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <i class="fas fa-plus me-2"></i>Nueva Retroalimentación
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-3 filter-card">
+    <div class="card-header">
+      <h6 class="mb-0">
+        <i class="fas fa-filter me-2"></i>Filtros de Retroalimentación
+        <button class="btn btn-sm btn-outline-light float-end" (click)="clearAllFilters()">
+          <i class="fas fa-times me-1"></i>Limpiar Filtros
+        </button>
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="assignmentFilter" class="form-label">Asignación:</label>
+            <select id="assignmentFilter" class="form-select" [(ngModel)]="filters.assignment" (change)="applyFilters()">
+              <option value="">Todas las asignaciones</option>
+              <option *ngFor="let assignment of assignments" [value]="assignment.title">{{ assignment.title }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="teamFilter" class="form-label">Equipo:</label>
+            <select id="teamFilter" class="form-select" [(ngModel)]="filters.team" (change)="applyFilters()">
+              <option value="">Todos los equipos</option>
+              <option *ngFor="let team of teams" [value]="team.name">{{ team.name }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="typeFilter" class="form-label">Tipo:</label>
+            <select id="typeFilter" class="form-select" [(ngModel)]="filters.feedbackType" (change)="applyFilters()">
+              <option value="">Todos los tipos</option>
+              <option *ngFor="let type of feedbackTypes" [value]="type">{{ getFeedbackTypeLabel(type) }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="dateFromFilter" class="form-label">Fecha desde:</label>
+            <input type="date" id="dateFromFilter" class="form-control" [(ngModel)]="filters.dateFrom" (change)="applyFilters()">
+          </div>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="dateToFilter" class="form-label">Fecha hasta:</label>
+            <input type="date" id="dateToFilter" class="form-control" [(ngModel)]="filters.dateTo" (change)="applyFilters()">
+          </div>
+        </div>
+        <div class="col-md-9">
+          <div class="filter-status-info">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <span class="badge bg-primary me-2">{{ filteredFeedbacks.length }} retroalimentaciones</span>
+                <small class="text-muted">
+                  {{ filteredFeedbacks.length === feedbacks.length ? 'Sin filtros aplicados' : 'Filtros activos' }}
+                </small>
+              </div>
+              <button class="btn btn-outline-success" 
+                      (click)="downloadFilteredFeedbacks()" 
+                      [disabled]="filteredFeedbacks.length === 0">
+                <i class="fas fa-download me-2"></i>Descargar Filtradas
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Retroalimentaciones -->
+  <div class="table-responsive">
+    <table class="table table-striped table-feedbacks">
+      <thead>
+        <tr>
+          <th width="8%">ID</th>
+          <th width="20%">Entrega</th>
+          <th width="15%">Equipo</th>
+          <th width="12%">Tipo</th>
+          <th width="25%">Contenido</th>
+          <th width="12%">Fecha</th>
+          <th width="15%">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let feedback of filteredFeedbacks" [attr.data-id]="feedback.id">
+          <td>{{ feedback.id }}</td>
+          <td>
+            <div class="text-truncate" style="max-width: 200px;">
+              <strong>{{ feedback.assignmentTitle || 'Sin asignación' }}</strong><br>
+              <small class="text-muted">
+                <i class="fab fa-github me-1"></i>
+                <a [href]="feedback.submissionUrl" target="_blank" class="text-decoration-none">
+                  {{ feedback.submissionUrl || 'Sin URL' }}
+                </a>
+              </small>
+            </div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark">{{ feedback.teamName || 'Sin equipo' }}</span>
+          </td>
+          <td>
+            <span class="badge feedback-type-badge" [ngClass]="getFeedbackTypeBadgeClass(feedback.feedbackType)">
+              {{ getFeedbackTypeLabel(feedback.feedbackType) }}
+            </span>
+          </td>
+          <td>
+            <div class="text-truncate" style="max-width: 250px;" [title]="feedback.content || 'Sin contenido'">
+              {{ feedback.content || 'Sin contenido' }}
+            </div>
+          </td>
+          <td>
+            <small>{{ formatFeedbackDate(feedback.feedbackDate) }}</small>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-sm btn-info" (click)="openViewModal(feedback)" title="Ver detalles">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-warning" (click)="openEditModal(feedback)" title="Editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="deleteFeedback(feedback.id)" title="Eliminar">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredFeedbacks.length === 0">
+          <td colspan="7" class="text-center text-muted py-4">
+            <i class="fas fa-search me-2"></i>No se encontraron retroalimentaciones
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal para crear/editar retroalimentación -->
+<div class="modal fade" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-comments me-2"></i>
+          {{ editingFeedback ? 'Editar Retroalimentación' : 'Nueva Retroalimentación' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="submissionSelect" class="form-label">Entrega *</label>
+                <select id="submissionSelect" class="form-select" [(ngModel)]="newFeedback.submissionId" name="submissionId" required>
+                  <option value="0">Selecciona una entrega</option>
+                  <option *ngFor="let submission of submissions" [value]="submission.id">
+                    {{ submission.id }} - {{ submission.assignmentTitle }} - {{ submission.teamName }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="typeSelect" class="form-label">Tipo de Retroalimentación *</label>
+                <select id="typeSelect" class="form-select" [(ngModel)]="newFeedback.feedbackType" name="feedbackType" required>
+                  <option *ngFor="let type of feedbackTypes" [value]="type">{{ getFeedbackTypeLabel(type) }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="contentInput" class="form-label">Contenido Principal</label>
+            <textarea id="contentInput" class="form-control" rows="4" 
+                      [(ngModel)]="newFeedback.content" name="content"
+                      placeholder="Describe el contenido principal de la retroalimentación..."></textarea>
+          </div>
+
+          <!-- Campos legacy para compatibilidad -->
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="strengthsInput" class="form-label">Fortalezas</label>
+                <textarea id="strengthsInput" class="form-control" rows="3" 
+                          [(ngModel)]="newFeedback.strengths" name="strengths"
+                          placeholder="Aspectos positivos identificados..."></textarea>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="improvementsInput" class="form-label">Mejoras</label>
+                <textarea id="improvementsInput" class="form-control" rows="3" 
+                          [(ngModel)]="newFeedback.improvements" name="improvements"
+                          placeholder="Aspectos a mejorar..."></textarea>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="saveFeedback()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ editingFeedback ? 'Actualizar' : 'Crear' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para ver detalles de retroalimentación -->
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>Detalles de Retroalimentación #{{ editingFeedback?.id }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body" *ngIf="editingFeedback">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6><i class="fas fa-info-circle me-2"></i>Información General</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td><strong>ID:</strong></td>
+                <td>{{ editingFeedback.id }}</td>
+              </tr>
+              <tr>
+                <td><strong>Tipo:</strong></td>
+                <td>
+                  <span class="badge" [ngClass]="getFeedbackTypeBadgeClass(editingFeedback.feedbackType)">
+                    {{ getFeedbackTypeLabel(editingFeedback.feedbackType) }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Fecha:</strong></td>
+                <td>{{ formatFeedbackDate(editingFeedback.feedbackDate) }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fas fa-file-alt me-2"></i>Información de Entrega</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td><strong>Asignación:</strong></td>
+                <td>{{ editingFeedback.assignmentTitle }}</td>
+              </tr>
+              <tr>
+                <td><strong>Equipo:</strong></td>
+                <td>{{ editingFeedback.teamName }}</td>
+              </tr>
+              <tr>
+                <td><strong>Repositorio:</strong></td>
+                <td>
+                  <a [href]="editingFeedback.submissionUrl" target="_blank" class="text-decoration-none">
+                    <i class="fab fa-github me-1"></i>{{ editingFeedback.submissionUrl }}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        
+        <div class="mb-4" *ngIf="editingFeedback.content">
+          <h6><i class="fas fa-file-text me-2"></i>Contenido Principal</h6>
+          <div class="feedback-content markdown-content" [innerHTML]="renderMarkdown(editingFeedback.content)">
+          </div>
+        </div>
+
+        <div class="row" *ngIf="editingFeedback.strengths || editingFeedback.improvements">
+          <div class="col-md-6" *ngIf="editingFeedback.strengths">
+            <h6><i class="fas fa-thumbs-up me-2 text-success"></i>Fortalezas</h6>
+            <div class="feedback-section markdown-content" [innerHTML]="renderMarkdown(editingFeedback.strengths)">
+            </div>
+          </div>
+          <div class="col-md-6" *ngIf="editingFeedback.improvements">
+            <h6><i class="fas fa-arrow-up me-2 text-warning"></i>Mejoras</h6>
+            <div class="feedback-section markdown-content" [innerHTML]="renderMarkdown(editingFeedback.improvements)">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cerrar</button>
+        <button type="button" class="btn btn-warning" (click)="openEditModal(editingFeedback!)">
+          <i class="fas fa-edit me-2"></i>Editar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade" 
+     [class.show]="showCreateModal || showViewModal"
+     *ngIf="showCreateModal || showViewModal">
+</div>

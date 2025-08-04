@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'eci-iagen-angular' title`, () => {
+  it(`should have the 'eci-iagen' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('eci-iagen-angular');
+    expect(app.title).toEqual('eci-iagen');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, eci-iagen-angular');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, eci-iagen');
   });
 });

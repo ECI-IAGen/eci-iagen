@@ -299,6 +299,57 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  // =================== EVALUACIÓN AUTOMÁTICA ===================
+  
+  // EVALUACIÓN AUTOMÁTICA - COMMITS DE GITHUB (CRONOGRAMA)
+  autoEvaluateGitHubCommits(submissionId: number, evaluatorId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/evaluations/auto/scheduler/${submissionId}/${evaluatorId}`, {}, this.httpOptions)
+      .pipe(catchError(this.handleError));
+  }
+
+  // EVALUACIÓN AUTOMÁTICA - BUENAS PRÁCTICAS
+  autoEvaluateGoodPractices(submissionId: number, evaluatorId: number, usingIA: boolean = false): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/evaluations/auto/good-practice/${submissionId}/${evaluatorId}?using-ia=${usingIA}`, {}, this.httpOptions)
+      .pipe(catchError(this.handleError));
+  }
+
+  // MÉTODO UNIFICADO PARA EVALUACIÓN AUTOMÁTICA
+  autoEvaluate(submissionId: number, evaluatorId: number, evaluationType: 'commits' | 'scheduler' | 'good-practices', options: { usingIA?: boolean } = {}): Observable<any> {
+    switch (evaluationType) {
+      case 'commits':
+      case 'scheduler':
+        return this.autoEvaluateGitHubCommits(submissionId, evaluatorId);
+      
+      case 'good-practices':
+        const usingIA = options.usingIA || false;
+        return this.autoEvaluateGoodPractices(submissionId, evaluatorId, usingIA);
+      
+      default:
+        return throwError(() => new Error(`Tipo de evaluación no válido: ${evaluationType}. Tipos válidos: 'commits', 'scheduler', 'good-practices'`));
+    }
+  }
+
+  // MÉTODOS ADICIONALES PARA EVALUACIONES
+  getEvaluationsBySubmission(submissionId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/evaluations/submission/${submissionId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getEvaluationsByEvaluator(evaluatorId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/evaluations/evaluator/${evaluatorId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getEvaluationsByTeam(teamId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/evaluations/team/${teamId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  getEvaluationsByScoreRange(minScore: number, maxScore: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/evaluations/score-range?minScore=${minScore}&maxScore=${maxScore}`)
+      .pipe(catchError(this.handleError));
+  }
+
   // =================== RETROALIMENTACIÓN ===================
   getFeedbacks(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/feedbacks`)

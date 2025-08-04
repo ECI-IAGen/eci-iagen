@@ -1,136 +1,328 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../services/api.service';
+import { Feedback, FeedbackFormData, FilterOptions, FEEDBACK_TYPES } from '../../../models/feedback.models';
+import { Submission, Assignment, Team } from '../../../models/submission.models';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-feedback',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="component-container">
-      <div class="section-header">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 class="section-title">
-              <i class="fas fa-comments me-2"></i>Gestión de Retroalimentación
-            </h2>
-            <p class="section-subtitle text-muted">Administra la retroalimentación y comentarios del sistema</p>
-          </div>
-          <div class="section-actions">
-            <button class="btn btn-outline-primary me-2" (click)="loadFeedback()">
-              <i class="fas fa-refresh me-2"></i>Recargar
-            </button>
-            <button class="btn btn-primary" (click)="createFeedback()">
-              <i class="fas fa-plus me-2"></i>Nueva Retroalimentación
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="section-body">
-        <div class="coming-soon-container">
-          <div class="text-center py-5">
-            <div class="coming-soon-icon mb-4">
-              <i class="fas fa-comments text-primary"></i>
-            </div>
-            <h4 class="text-primary mb-3">Componente Retroalimentación</h4>
-            <p class="text-muted mb-4">Este componente está listo para implementar la funcionalidad de gestión de retroalimentación</p>
-            <div class="feature-list">
-              <div class="feature-item">
-                <i class="fas fa-check text-success me-2"></i>
-                <span>Listar retroalimentaciones existentes</span>
-              </div>
-              <div class="feature-item">
-                <i class="fas fa-check text-success me-2"></i>
-                <span>Crear nueva retroalimentación</span>
-              </div>
-              <div class="feature-item">
-                <i class="fas fa-check text-success me-2"></i>
-                <span>Responder a comentarios</span>
-              </div>
-              <div class="feature-item">
-                <i class="fas fa-check text-success me-2"></i>
-                <span>Generar reportes de feedback</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .component-container {
-      background: white;
-      border-radius: 0.5rem;
-      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      overflow: hidden;
-    }
-    
-    .section-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid #dee2e6;
-      background-color: #f8f9fa;
-    }
-    
-    .section-title {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #212529;
-    }
-    
-    .section-subtitle {
-      margin: 0.5rem 0 0 0;
-      font-size: 0.9rem;
-    }
-    
-    .section-body {
-      padding: 2rem;
-    }
-    
-    .coming-soon-icon {
-      font-size: 4rem;
-    }
-    
-    .feature-list {
-      text-align: left;
-      display: inline-block;
-    }
-    
-    .feature-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-    
-    @media (max-width: 768px) {
-      .section-header {
-        padding: 1rem;
-      }
-      
-      .section-actions {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      
-      .section-actions .btn {
-        width: 100%;
-        margin: 0 !important;
-      }
-    }
-  `]
+  imports: [CommonModule, FormsModule],
+  templateUrl: './feedback.component.html',
+  styleUrls: ['./feedback.component.css']
 })
-export class FeedbackComponent {
+export class FeedbackComponent implements OnInit {
+  feedbacks: Feedback[] = [];
+  filteredFeedbacks: Feedback[] = [];
   
-  constructor() {}
-  
-  loadFeedback() {
-    console.log('Cargando retroalimentación...');
-    // Aquí se implementará la lógica para cargar retroalimentación
+  // Data for dropdowns
+  submissions: Submission[] = [];
+  assignments: Assignment[] = [];
+  teams: Team[] = [];
+
+  filters: FilterOptions = {
+    assignment: '',
+    team: '',
+    feedbackType: '',
+    dateFrom: '',
+    dateTo: ''
+  };
+
+  // Modal state
+  showCreateModal = false;
+  showViewModal = false;
+  editingFeedback: Feedback | null = null;
+
+  // Form data
+  newFeedback: FeedbackFormData = {
+    submissionId: 0,
+    feedbackType: 'GENERAL',
+    content: '',
+    strengths: '',
+    improvements: ''
+  };
+
+  feedbackTypes = Object.values(FEEDBACK_TYPES);
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
+
+  constructor(private apiService: ApiService) {
+    // Configure marked for safe HTML rendering
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
   }
-  
+
+  ngOnInit() {
+    this.loadData();
+  }
+
+  async loadData() {
+    try {
+      this.isLoading = true;
+      
+      const [feedbacks, submissions, assignments, teams] = await Promise.all([
+        this.apiService.getFeedbacks().toPromise(),
+        this.apiService.getSubmissions().toPromise(),
+        this.apiService.getAssignments().toPromise(),
+        this.apiService.getTeams().toPromise()
+      ]);
+
+      this.feedbacks = feedbacks || [];
+      this.submissions = submissions || [];
+      this.assignments = assignments || [];
+      this.teams = teams || [];
+
+      this.enrichFeedbackData();
+      this.filteredFeedbacks = [...this.feedbacks];
+
+    } catch (error: any) {
+      this.showError('Error al cargar datos: ' + error.message);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  enrichFeedbackData() {
+    this.feedbacks.forEach(feedback => {
+      // Find submission details
+      const submission = this.submissions.find(s => s.id === feedback.submissionId);
+      if (submission) {
+        feedback.submissionUrl = submission.fileUrl;
+        
+        // Find assignment details
+        const assignment = this.assignments.find(a => a.id === submission.assignmentId);
+        if (assignment) {
+          feedback.assignmentTitle = assignment.title;
+        }
+
+        // Find team details
+        const team = this.teams.find(t => t.id === submission.teamId);
+        if (team) {
+          feedback.teamName = team.name;
+        }
+      }
+    });
+  }
+
+  applyFilters() {
+    this.filteredFeedbacks = this.feedbacks.filter(feedback => {
+      // Assignment filter
+      if (this.filters.assignment && feedback.assignmentTitle !== this.filters.assignment) {
+        return false;
+      }
+
+      // Team filter
+      if (this.filters.team && feedback.teamName !== this.filters.team) {
+        return false;
+      }
+
+      // Feedback type filter
+      if (this.filters.feedbackType && feedback.feedbackType !== this.filters.feedbackType) {
+        return false;
+      }
+
+      // Date filters
+      if (this.filters.dateFrom || this.filters.dateTo) {
+        const feedbackDate = this.parseFeedbackDate(feedback.feedbackDate);
+        if (this.filters.dateFrom && feedbackDate && feedbackDate < new Date(this.filters.dateFrom)) {
+          return false;
+        }
+        if (this.filters.dateTo && feedbackDate && feedbackDate > new Date(this.filters.dateTo)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  clearAllFilters() {
+    this.filters = {
+      assignment: '',
+      team: '',
+      feedbackType: '',
+      dateFrom: '',
+      dateTo: ''
+    };
+    this.filteredFeedbacks = [...this.feedbacks];
+  }
+
+  openCreateModal() {
+    this.newFeedback = {
+      submissionId: 0,
+      feedbackType: 'GENERAL',
+      content: '',
+      strengths: '',
+      improvements: ''
+    };
+    this.editingFeedback = null;
+    this.showCreateModal = true;
+  }
+
+  openEditModal(feedback: Feedback) {
+    this.newFeedback = { ...feedback };
+    this.editingFeedback = feedback;
+    this.showCreateModal = true;
+  }
+
+  openViewModal(feedback: Feedback) {
+    this.editingFeedback = feedback;
+    this.showViewModal = true;
+  }
+
+  closeModals() {
+    this.showCreateModal = false;
+    this.showViewModal = false;
+    this.editingFeedback = null;
+  }
+
+  async saveFeedback() {
+    try {
+      this.isLoading = true;
+
+      if (this.editingFeedback) {
+        // Update existing feedback
+        await this.apiService.updateFeedback(this.editingFeedback.id, this.newFeedback).toPromise();
+        this.showSuccess('Retroalimentación actualizada correctamente');
+      } else {
+        // Create new feedback
+        await this.apiService.createFeedback(this.newFeedback).toPromise();
+        this.showSuccess('Retroalimentación creada correctamente');
+      }
+
+      this.closeModals();
+      this.loadData();
+
+    } catch (error: any) {
+      this.showError('Error al guardar retroalimentación: ' + error.message);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async deleteFeedback(id: number) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta retroalimentación?')) {
+      return;
+    }
+
+    try {
+      this.isLoading = true;
+      await this.apiService.deleteFeedback(id).toPromise();
+      this.showSuccess('Retroalimentación eliminada correctamente');
+      this.loadData();
+    } catch (error: any) {
+      this.showError('Error al eliminar retroalimentación: ' + error.message);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getFeedbackTypeLabel(type: string): string {
+    const typeLabels: { [key: string]: string } = {
+      'GENERAL': 'General',
+      'TECHNICAL': 'Técnico',
+      'IMPROVEMENT': 'Mejora',
+      'STRENGTH': 'Fortaleza',
+      'SUGGESTION': 'Sugerencia'
+    };
+    
+    return typeLabels[type] || type;
+  }
+
+  getFeedbackTypeBadgeClass(type: string): string {
+    const typeClasses: { [key: string]: string } = {
+      'GENERAL': 'bg-primary',
+      'TECHNICAL': 'bg-info',
+      'IMPROVEMENT': 'bg-warning',
+      'STRENGTH': 'bg-success',
+      'SUGGESTION': 'bg-secondary'
+    };
+    
+    return typeClasses[type] || 'bg-secondary';
+  }
+
+  formatFeedbackDate(date: string | Date | number[] | undefined): string {
+    if (!date) return '';
+    
+    let parsedDate: Date;
+    
+    if (Array.isArray(date)) {
+      // Handle number array format [year, month, day, hour, minute, second]
+      parsedDate = new Date(date[0], date[1] - 1, date[2], date[3] || 0, date[4] || 0, date[5] || 0);
+    } else if (typeof date === 'string') {
+      parsedDate = new Date(date);
+    } else {
+      parsedDate = date;
+    }
+    
+    return parsedDate.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  private parseFeedbackDate(date: string | Date | number[] | undefined): Date | null {
+    if (!date) return null;
+    
+    if (Array.isArray(date)) {
+      // Handle number array format [year, month, day, hour, minute, second]
+      return new Date(date[0], date[1] - 1, date[2], date[3] || 0, date[4] || 0, date[5] || 0);
+    } else if (typeof date === 'string') {
+      return new Date(date);
+    } else {
+      return date;
+    }
+  }
+
+  downloadFeedbacks() {
+    // Implementation for downloading feedbacks
+    console.log('Downloading all feedbacks...');
+  }
+
+  downloadFilteredFeedbacks() {
+    // Implementation for downloading filtered feedbacks
+    console.log('Downloading filtered feedbacks...');
+  }
+
+  private showSuccess(message: string) {
+    this.successMessage = message;
+    this.errorMessage = '';
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 5000);
+  }
+
+  private showError(message: string) {
+    this.errorMessage = message;
+    this.successMessage = '';
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 5000);
+  }
+
+  renderMarkdown(content: string): string {
+    if (!content) return '';
+    try {
+      return marked(content) as string;
+    } catch (error) {
+      console.error('Error rendering markdown:', error);
+      return content; // Fallback to plain text
+    }
+  }
+
+  loadFeedback() {
+    this.loadData();
+  }
+
   createFeedback() {
-    console.log('Creando nueva retroalimentación...');
-    // Aquí se implementará la lógica para crear nueva retroalimentación
+    this.openCreateModal();
   }
 }

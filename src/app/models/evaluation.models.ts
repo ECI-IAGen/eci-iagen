@@ -1,86 +1,42 @@
-// Evaluation Models - TypeScript interfaces for evaluation domain objects
+// Interfaces para el componente de Evaluaciones
 
 export interface Evaluation {
   id: number;
   submissionId: number;
   evaluatorId: number;
   score: number;
-  evaluationType: 'MANUAL' | 'AUTOMATIC';
+  evaluationType: string;
   criteria?: string;
-  criteriaJson?: any;
-  feedback?: string;
-  evaluationDate: Date | number[] | string;
-  createdAt?: Date | number[] | string;
-  updatedAt?: Date | number[] | string;
-
-  // Additional fields that may come from backend joins
-  className?: string;
-  classId?: number;
-  assignmentTitle?: string;
-  teamName?: string;
+  criteriaJson?: string;
+  evaluationDate?: string | Date | number[];
   evaluatorName?: string;
-
-  // Related entity information
-  submission?: EvaluationSubmission;
-  evaluator?: EvaluationUser;
-}
-
-export interface EvaluationSubmission {
-  id: number;
-  assignmentId: number;
-  teamId: number;
-  submissionDate: Date | number[] | string;
-  submissionPath?: string;
-  
-  // Additional fields that may come from backend joins
-  className?: string;
+  submissionUrl?: string;
   assignmentTitle?: string;
   teamName?: string;
-  
-  // Related entity information
-  assignment?: EvaluationAssignment;
-  team?: EvaluationTeam;
+  className?: string;
 }
 
-export interface EvaluationAssignment {
-  id: number;
-  title: string;
-  description?: string;
-  classId: number;
-  dueDate: Date | number[] | string;
-  
-  // Related entity information
-  class?: EvaluationClass;
-}
-
-export interface EvaluationClass {
+export interface User {
   id: number;
   name: string;
-  code?: string;
-  description?: string;
-  semester?: string;
-  year?: number;
+  email?: string;
+  roleId?: number;
+  roleName?: string;
 }
 
-export interface EvaluationTeam {
+export interface Class {
   id: number;
   name: string;
-  classId: number;
-  
-  // Related entity information
-  class?: EvaluationClass;
-  members?: EvaluationUser[];
+  description?: string;
+  professorId?: number;
+  teams?: any[];
 }
 
-export interface EvaluationUser {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role?: string;
+export interface AutoEvaluationOptions {
+  usingIA: boolean;
 }
 
-export interface EvaluationFilters {
+export interface FilterOptions {
   class: string;
   assignment: string;
   team: string;
@@ -91,71 +47,38 @@ export interface EvaluationFilters {
   dateTo: string;
 }
 
-export interface NewEvaluation {
+export interface EvaluationFormData {
   submissionId: number;
   evaluatorId: number;
   score: number;
-  evaluationType: 'MANUAL' | 'AUTOMATIC';
+  evaluationType: string;
   criteria?: string;
-  feedback?: string;
 }
 
-export interface UpdateEvaluation {
+export interface AutoEvaluationResult {
   id: number;
   submissionId: number;
   evaluatorId: number;
   score: number;
-  evaluationType: 'MANUAL' | 'AUTOMATIC';
-  criteria?: string;
-  feedback?: string;
+  evaluationType: string;
+  criteriaJson: string;
+  evaluationDate: string;
+  commits?: CommitInfo[];
+  finalScore?: number;
+  lateDays?: number;
+  totalPenalty?: number;
+  isLate?: boolean;
+  evaluationMethod?: string;
 }
 
-export interface EvaluationApiResponse {
-  evaluations: Evaluation[];
-  total: number;
-  page?: number;
-  limit?: number;
-}
-
-export interface EvaluationOption {
-  value: string;
-  label: string;
-}
-
-export interface EvaluationStats {
-  totalEvaluations: number;
-  averageScore: number;
-  manualEvaluations: number;
-  automaticEvaluations: number;
-  evaluationsByClass: { [className: string]: number };
-  evaluationsByType: { [type: string]: number };
-}
-
-// Helper type for CSV export
-export interface EvaluationCSVData {
-  'ID': string;
-  'Entrega': string;
-  'Clase': string;
-  'Asignación': string;
-  'Equipo': string;
-  'Evaluador': string;
-  'Puntuación': string;
-  'Tipo': string;
-  'Fecha Evaluación': string;
-  'Retroalimentación': string;
-  'Criterios': string;
-}
-
-// Helper type for criteria data
-export interface CriteriaData {
-  [key: string]: any;
-}
-
-// Helper type for commit information
 export interface CommitInfo {
-  hash: string;
   sha: string;
   message: string;
   date: string;
   onTime: boolean;
 }
+
+export interface CriteriaData {
+  [key: string]: any; // Generic interface to support any JSON structure
+}
+

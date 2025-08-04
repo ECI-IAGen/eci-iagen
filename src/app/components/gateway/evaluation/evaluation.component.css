@@ -1,0 +1,355 @@
+/* Estilos específicos para el componente de evaluaciones */
+.content-section {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilos para los filtros múltiples */
+.filter-card {
+  border: 1px solid #e3e6f0;
+  border-radius: 0.35rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.filter-card .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  color: white;
+}
+
+.filter-card .form-label {
+  font-weight: 600;
+  color: #5a5c69;
+  font-size: 0.875rem;
+}
+
+.filter-card .form-select,
+.filter-card .form-control {
+  border: 1px solid #d1d3e2;
+  border-radius: 0.35rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.filter-card .form-select:focus,
+.filter-card .form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.filter-status-info {
+  background: #f8f9fc;
+  border-radius: 0.35rem;
+  padding: 0.75rem;
+  border-left: 4px solid #667eea;
+}
+
+/* Estilos para la tabla de evaluaciones */
+.table-evaluations {
+  font-size: 0.9rem;
+}
+
+.table-evaluations th {
+  background-color: #f1f3f4;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 0.875rem;
+}
+
+.table-evaluations td {
+  vertical-align: middle;
+  padding: 0.75rem 0.5rem;
+}
+
+.action-buttons {
+  white-space: nowrap;
+}
+
+.action-buttons .btn {
+  margin: 0 2px;
+  padding: 0.375rem 0.5rem;
+}
+
+.evaluation-score {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.evaluation-type-badge {
+  font-size: 0.9em;
+  padding: 0.5rem 1rem;
+}
+
+.text-truncate {
+  max-width: 200px;
+}
+
+/* Estilos para modales */
+.modal-content {
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-header .btn-close {
+  filter: invert(1);
+}
+
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.score-input {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.auto-evaluate-section {
+  background-color: #e7f3ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.auto-evaluate-section .card {
+  transition: transform 0.2s ease-in-out;
+}
+
+.auto-evaluate-section .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para criterios de evaluación */
+.criteria-display {
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  border: 1px solid #dee2e6;
+}
+
+.criteria-display .card {
+  margin-bottom: 1rem;
+}
+
+.criteria-display .card:last-child {
+  margin-bottom: 0;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.commit-item {
+  background-color: #ffffff;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.commit-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Estilos para badges de puntuación */
+.badge.bg-success { background-color: #28a745 !important; }
+.badge.bg-info { background-color: #17a2b8 !important; }
+.badge.bg-warning { background-color: #ffc107 !important; color: #212529 !important; }
+.badge.bg-danger { background-color: #dc3545 !important; }
+
+/* Estilos para notificaciones */
+.alert {
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.alert-success {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+/* Loading spinner */
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Responsive para evaluaciones */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  .evaluation-score {
+    font-size: 1rem;
+  }
+  
+  .text-truncate {
+    max-width: 120px;
+  }
+  
+  .action-buttons .btn {
+    padding: 0.25rem 0.375rem;
+    margin: 0 1px;
+  }
+  
+  .filter-card .card-body .row {
+    margin-bottom: 0.5rem;
+  }
+  
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .d-flex.justify-content-between > div {
+    text-align: center;
+  }
+  
+  .modal-dialog.modal-lg,
+  .modal-dialog.modal-xl {
+    max-width: 95%;
+  }
+  
+  .auto-evaluate-section .row {
+    gap: 1rem;
+  }
+  
+  .auto-evaluate-section .col-md-6 {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Estilos para dark mode (opcional) */
+@media (prefers-color-scheme: dark) {
+  .filter-card {
+    background-color: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .table-evaluations {
+    color: #e2e8f0;
+  }
+  
+  .table-evaluations th {
+    background-color: #4a5568;
+    color: #e2e8f0;
+  }
+  
+  .criteria-display {
+    background-color: #2d3748;
+    color: #e2e8f0;
+    border-color: #4a5568;
+  }
+}
+
+/* Estilos para la visualización de criterios */
+.criteria-container {
+  font-size: 0.875rem;
+}
+
+.criteria-header h6 {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.criteria-item {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.criteria-item:last-child {
+  border-bottom: none;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.metric-item strong {
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+.metric-item .badge {
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments for criteria display */
+@media (max-width: 768px) {
+  .criteria-container .row {
+    margin: 0;
+  }
+  
+  .criteria-container .col-md-6 {
+    padding: 0.25rem;
+  }
+  
+  .metric-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .metric-item strong {
+    margin-right: 0;
+  }
+}
+
+/* Animation for criteria cards */
+.criteria-container .card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.criteria-container .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling for nested criteria display */
+.criteria-item .border-start {
+  border-color: #667eea !important;
+  border-width: 3px !important;
+}
+
+/* Warning alert for IA analysis */
+.alert-warning small {
+  font-size: 0.8rem;
+}
