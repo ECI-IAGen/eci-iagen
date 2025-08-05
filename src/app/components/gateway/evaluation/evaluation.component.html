@@ -25,6 +25,13 @@
       <button class="btn btn-info me-2" (click)="openAutoEvaluateModal()">
         <i class="fas fa-robot me-2"></i>Evaluación Automática
       </button>
+      <button class="btn btn-warning me-2" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#originalityAnalysis"
+              aria-expanded="false"
+              (click)="toggleOriginalitySection()">
+        <i class="fas fa-search-plus me-2"></i>Originalidad
+      </button>
       <button class="btn btn-success me-2" (click)="downloadEvaluations()">
         <i class="fas fa-download me-2"></i>Descargar Evaluaciones
       </button>
@@ -139,6 +146,46 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección de Análisis de Originalidad -->
+  <div class="collapse mt-3" id="originalityAnalysis">
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="fas fa-search-plus me-2"></i>Análisis de Originalidad
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="assignmentSelectOriginality" class="form-label">Seleccionar Asignación:</label>
+            <select id="assignmentSelectOriginality" 
+                    class="form-select" 
+                    [(ngModel)]="selectedAssignmentForOriginality">
+              <option [ngValue]="null">Selecciona una asignación</option>
+              <option *ngFor="let assignment of assignments" [ngValue]="assignment">
+                {{ assignment.title }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-6 d-flex align-items-end">
+            <div class="text-muted">
+              <small>
+                <i class="fas fa-info-circle me-2"></i>
+                {{ getSubmissionsForOriginality().length }} entregas disponibles para análisis
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <app-originality-results 
+          [assignmentId]="selectedAssignmentForOriginality?.id || 0"
+          [assignmentTitle]="selectedAssignmentForOriginality?.title || ''"
+          [submissions]="getSubmissionsForOriginality()">
+        </app-originality-results>
       </div>
     </div>
   </div>

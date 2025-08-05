@@ -376,6 +376,17 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  // =================== ANÁLISIS DE ORIGINALIDAD (JPLAG) ===================
+  checkOriginality(assignmentData: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/jplag/detect`, assignmentData, this.httpOptions)
+      .pipe(catchError(this.handleError));
+  }
+
+  checkJPlagHealth(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/jplag/health`)
+      .pipe(catchError(this.handleError));
+  }
+
   // =================== IMPORTACIÓN EXCEL ===================
   importExcel(file: File): Observable<any> {
     const formData = new FormData();

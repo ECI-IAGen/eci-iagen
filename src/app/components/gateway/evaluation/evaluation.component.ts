@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../services/api.service';
+import { OriginalityResultsComponent } from '../../originality-results/originality-results.component';
 import { 
   Evaluation, 
   User, 
@@ -17,7 +18,7 @@ import { Submission, Assignment, Team } from '../../../models/submission.models'
 @Component({
   selector: 'app-evaluation',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OriginalityResultsComponent],
   templateUrl: './evaluation.component.html',
   styleUrls: ['./evaluation.component.css']
 })
@@ -70,6 +71,10 @@ export class EvaluationComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+
+  // Originality analysis properties
+  showOriginalitySection = false;
+  selectedAssignmentForOriginality: Assignment | null = null;
 
   constructor(private apiService: ApiService) {}
 
@@ -700,5 +705,41 @@ export class EvaluationComponent implements OnInit {
 
   private updateUniqueEvaluationTypes() {
     this.uniqueEvaluationTypes = [...new Set(this.evaluations.map(evaluation => evaluation.evaluationType).filter(type => type))];
+  }
+
+  // =================== ORIGINALITY ANALYSIS METHODS ===================
+  
+  toggleOriginalitySection() {
+    this.showOriginalitySection = !this.showOriginalitySection;
+    
+    // Set default assignment if none selected
+    if (this.showOriginalitySection && !this.selectedAssignmentForOriginality && this.assignments.length > 0) {
+      this.selectedAssignmentForOriginality = this.assignments[0];
+    }
+  }
+
+  getSubmissionsForOriginality(): any[] {
+    if (!this.selectedAssignmentForOriginality) {
+      return [];
+    }
+
+    // Get submissions for the selected assignment
+    const assignmentSubmissions = this.submissions.filter(submission => 
+      submission.assignmentId === this.selectedAssignmentForOriginality!.id
+    );
+
+    // Transform submissions to include repository URL from fileUrl
+    return assignmentSubmissions.map(submission => {
+      const team = this.teams.find(t => t.id === submission.teamId);
+      return {
+        id: submission.id,
+        teamId: submission.teamId,
+        teamName: team?.name || `Team ${submission.teamId}`,
+        repositoryUrl: submission.fileUrl || '', // Using fileUrl as repository URL
+        assignmentId: submission.assignmentId,
+        assignmentTitle: this.selectedAssignmentForOriginality!.title,
+        memberNames: [] // We'll get member names from users if needed
+      };
+    }).filter(submission => submission.repositoryUrl); // Only include submissions with repository URLs
   }
 }
