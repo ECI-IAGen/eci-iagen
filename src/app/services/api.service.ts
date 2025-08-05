@@ -68,21 +68,6 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  getUserByEmail(email: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/users/email/${email}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getUsersByRoleId(roleId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/users/role/${roleId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getUsersByNameContaining(name: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/users/search?name=${name}`)
-      .pipe(catchError(this.handleError));
-  }
-
   // =================== ROLES ===================
   getRoles(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/roles`)
@@ -91,11 +76,6 @@ export class ApiService {
 
   getRoleById(id: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/roles/${id}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getRoleByName(name: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/roles/name/${name}`)
       .pipe(catchError(this.handleError));
   }
 
@@ -140,36 +120,6 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  getTeamByName(name: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/teams/name/${name}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getTeamsByUserId(userId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/teams/user/${userId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getTeamsByNameContaining(name: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/teams/search?name=${name}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  addUserToTeam(teamId: number, userId: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/teams/${teamId}/users/${userId}`, {})
-      .pipe(catchError(this.handleError));
-  }
-
-  removeUserFromTeam(teamId: number, userId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/teams/${teamId}/users/${userId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  updateTeamUsers(teamId: number, userIds: number[]): Observable<any> {
-    return this.http.put(`${this.baseUrl}/teams/${teamId}/users`, userIds, this.httpOptions)
-      .pipe(catchError(this.handleError));
-  }
-
   // =================== CLASES ===================
   getClasses(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/classes`)
@@ -196,39 +146,9 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
-  addTeamToClass(classId: number, teamId: number): Observable<any> {
-    return this.http.post(`${this.baseUrl}/classes/${classId}/teams/${teamId}`, {})
-      .pipe(catchError(this.handleError));
-  }
-
-  removeTeamFromClass(classId: number, teamId: number): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/classes/${classId}/teams/${teamId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getClassTeams(classId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/classes/${classId}/teams`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getClassesByProfessor(professorId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/classes/professor/${professorId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getClassesByTeam(teamId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/classes/team/${teamId}`)
-      .pipe(catchError(this.handleError));
-  }
-
   // =================== ASIGNACIONES ===================
   getAssignments(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/assignments`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getAssignmentById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/assignments/${id}`)
       .pipe(catchError(this.handleError));
   }
 
@@ -327,27 +247,6 @@ export class ApiService {
       default:
         return throwError(() => new Error(`Tipo de evaluación no válido: ${evaluationType}. Tipos válidos: 'commits', 'scheduler', 'good-practices'`));
     }
-  }
-
-  // MÉTODOS ADICIONALES PARA EVALUACIONES
-  getEvaluationsBySubmission(submissionId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/evaluations/submission/${submissionId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getEvaluationsByEvaluator(evaluatorId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/evaluations/evaluator/${evaluatorId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getEvaluationsByTeam(teamId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/evaluations/team/${teamId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  getEvaluationsByScoreRange(minScore: number, maxScore: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/evaluations/score-range?minScore=${minScore}&maxScore=${maxScore}`)
-      .pipe(catchError(this.handleError));
   }
 
   // =================== RETROALIMENTACIÓN ===================
