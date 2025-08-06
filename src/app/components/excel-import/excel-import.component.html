@@ -71,47 +71,170 @@
 
             <!-- Import Type Selection -->
             <div class="import-types mb-4">
-              <h6 class="mb-3">Tipo de Datos a Importar:</h6>
+              <h6 class="mb-3">Tipo de Importación:</h6>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="importType" id="users" value="users" [(ngModel)]="importType">
-                    <label class="form-check-label" for="users">
-                      <i class="fas fa-users text-primary me-2"></i>Usuarios
+                    <input class="form-check-input" type="radio" name="importType" id="complete" 
+                           [value]="ImportType.COMPLETE" [(ngModel)]="importType" (change)="onImportTypeChange()">
+                    <label class="form-check-label" for="complete">
+                      <i class="fas fa-file-excel text-primary me-2"></i>Importación Completa
+                      <small class="d-block text-muted">Procesa múltiples hojas del archivo Excel</small>
                     </label>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="importType" id="classes" value="classes" [(ngModel)]="importType">
-                    <label class="form-check-label" for="classes">
-                      <i class="fas fa-chalkboard text-info me-2"></i>Clases
+                    <input class="form-check-input" type="radio" name="importType" id="groups" 
+                           [value]="ImportType.GROUPS" [(ngModel)]="importType" (change)="onImportTypeChange()">
+                    <label class="form-check-label" for="groups">
+                      <i class="fas fa-chalkboard text-info me-2"></i>Solo Grupos
+                      <small class="d-block text-muted">Procesa únicamente la hoja de grupos</small>
                     </label>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="importType" id="teams" value="teams" [(ngModel)]="importType">
-                    <label class="form-check-label" for="teams">
-                      <i class="fas fa-user-friends text-warning me-2"></i>Equipos
+                    <input class="form-check-input" type="radio" name="importType" id="entregas" 
+                           [value]="ImportType.ENTREGAS" [(ngModel)]="importType" (change)="onImportTypeChange()">
+                    <label class="form-check-label" for="entregas">
+                      <i class="fas fa-tasks text-success me-2"></i>Solo Entregas
+                      <small class="d-block text-muted">Procesa únicamente la hoja de entregas</small>
                     </label>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="form-check">
-                    <input class="form-check-input" type="radio" name="importType" id="assignments" value="assignments" [(ngModel)]="importType">
-                    <label class="form-check-label" for="assignments">
-                      <i class="fas fa-tasks text-success me-2"></i>Asignaciones
+                    <input class="form-check-input" type="radio" name="importType" id="estudiantes" 
+                           [value]="ImportType.ESTUDIANTES" [(ngModel)]="importType" (change)="onImportTypeChange()">
+                    <label class="form-check-label" for="estudiantes">
+                      <i class="fas fa-users text-warning me-2"></i>Solo Estudiantes
+                      <small class="d-block text-muted">Procesa únicamente la hoja de estudiantes</small>
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="importType" id="equipos" 
+                           [value]="ImportType.EQUIPOS" [(ngModel)]="importType" (change)="onImportTypeChange()">
+                    <label class="form-check-label" for="equipos">
+                      <i class="fas fa-user-friends text-secondary me-2"></i>Solo Equipos
+                      <small class="d-block text-muted">Procesa únicamente la hoja de equipos</small>
                     </label>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- Format Information -->
+            <div *ngIf="formatInfo && importType === ImportType.COMPLETE" class="format-info mb-4">
+              <div class="alert alert-light">
+                <h6><i class="fas fa-info-circle me-2"></i>Formato Esperado (Completo)</h6>
+                <p class="mb-2"><strong>Descripción:</strong> {{ formatInfo.description }}</p>
+                <p class="mb-2"><strong>Versión:</strong> {{ formatInfo.version }}</p>
+                <p class="mb-2"><strong>Extensiones soportadas:</strong> {{ formatInfo.supportedExtensions }}</p>
+                <div *ngIf="formatInfo.sheets && formatInfo.sheets.length > 0">
+                  <p class="mb-2"><strong>Hojas requeridas:</strong></p>
+                  <ul class="mb-0">
+                    <li *ngFor="let sheet of formatInfo.sheets">
+                      <strong>{{ sheet.sheetName }}</strong> - {{ sheet.description }}
+                      <small class="text-muted">({{ sheet.columns.length || 0 }} columnas)</small>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="groupsFormatInfo && importType === ImportType.GROUPS" class="format-info mb-4">
+              <div class="alert alert-light">
+                <h6><i class="fas fa-info-circle me-2"></i>Formato Esperado (Grupos)</h6>
+                <p class="mb-2"><strong>Hoja:</strong> {{ groupsFormatInfo.sheetName }}</p>
+                <p class="mb-2"><strong>Descripción:</strong> {{ groupsFormatInfo.description }}</p>
+                <div *ngIf="groupsFormatInfo.columns && groupsFormatInfo.columns.length > 0">
+                  <p class="mb-2"><strong>Columnas esperadas:</strong></p>
+                  <ul class="mb-0">
+                    <li *ngFor="let column of groupsFormatInfo.columns">
+                      <strong>{{ column.columnLetter }}</strong>: {{ column.description }}
+                      <span class="badge badge-sm" [class]="column.required ? 'bg-danger' : 'bg-secondary'">
+                        {{ column.required ? 'Obligatorio' : 'Opcional' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="entregasFormatInfo && importType === ImportType.ENTREGAS" class="format-info mb-4">
+              <div class="alert alert-light">
+                <h6><i class="fas fa-info-circle me-2"></i>Formato Esperado (Entregas)</h6>
+                <p class="mb-2"><strong>Hoja:</strong> {{ entregasFormatInfo.sheetName }}</p>
+                <p class="mb-2"><strong>Descripción:</strong> {{ entregasFormatInfo.description }}</p>
+                <div *ngIf="entregasFormatInfo.columns && entregasFormatInfo.columns.length > 0">
+                  <p class="mb-2"><strong>Columnas esperadas:</strong></p>
+                  <ul class="mb-0">
+                    <li *ngFor="let column of entregasFormatInfo.columns">
+                      <strong>{{ column.columnLetter }}</strong>: {{ column.description }}
+                      <span class="badge badge-sm" [class]="column.required ? 'bg-danger' : 'bg-secondary'">
+                        {{ column.required ? 'Obligatorio' : 'Opcional' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="estudiantesFormatInfo && importType === ImportType.ESTUDIANTES" class="format-info mb-4">
+              <div class="alert alert-light">
+                <h6><i class="fas fa-info-circle me-2"></i>Formato Esperado (Estudiantes)</h6>
+                <p class="mb-2"><strong>Hoja:</strong> {{ estudiantesFormatInfo.sheetName }}</p>
+                <p class="mb-2"><strong>Descripción:</strong> {{ estudiantesFormatInfo.description }}</p>
+                <div *ngIf="estudiantesFormatInfo.columns && estudiantesFormatInfo.columns.length > 0">
+                  <p class="mb-2"><strong>Columnas esperadas:</strong></p>
+                  <ul class="mb-0">
+                    <li *ngFor="let column of estudiantesFormatInfo.columns">
+                      <strong>{{ column.columnLetter }}</strong>: {{ column.description }}
+                      <span class="badge badge-sm" [class]="column.required ? 'bg-danger' : 'bg-secondary'">
+                        {{ column.required ? 'Obligatorio' : 'Opcional' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="equiposFormatInfo && importType === ImportType.EQUIPOS" class="format-info mb-4">
+              <div class="alert alert-light">
+                <h6><i class="fas fa-info-circle me-2"></i>Formato Esperado (Equipos)</h6>
+                <p class="mb-2"><strong>Hoja:</strong> {{ equiposFormatInfo.sheetName }}</p>
+                <p class="mb-2"><strong>Descripción:</strong> {{ equiposFormatInfo.description }}</p>
+                <div *ngIf="equiposFormatInfo.columns && equiposFormatInfo.columns.length > 0">
+                  <p class="mb-2"><strong>Columnas esperadas:</strong></p>
+                  <ul class="mb-0">
+                    <li *ngFor="let column of equiposFormatInfo.columns">
+                      <strong>{{ column.columnLetter }}</strong>: {{ column.description }}
+                      <span class="badge badge-sm" [class]="column.required ? 'bg-danger' : 'bg-secondary'">
+                        {{ column.required ? 'Obligatorio' : 'Opcional' }}
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             <!-- Action Buttons -->
-            <div class="text-center">
+            <div class="text-center mb-4">
+              <button type="button" class="btn btn-outline-info me-3" 
+                      [disabled]="!selectedFile || isValidating || isImporting"
+                      (click)="validateFormat()">
+                <i class="fas fa-check-circle me-2"></i>
+                <span *ngIf="!isValidating">Validar Formato</span>
+                <span *ngIf="isValidating">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Validando...
+                </span>
+              </button>
               <button type="button" class="btn btn-success me-3" 
-                      [disabled]="!selectedFile || !importType || isImporting"
+                      [disabled]="!selectedFile || !importType || isImporting || isValidating"
                       (click)="importData()">
                 <i class="fas fa-upload me-2"></i>
                 <span *ngIf="!isImporting">Importar Datos</span>
@@ -123,6 +246,63 @@
               <a routerLink="/" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
               </a>
+            </div>
+
+            <!-- Validation Results -->
+            <div *ngIf="validationResult" class="validation-results mb-4">
+              <div class="alert" [class]="validationResult.success ? 'alert-success' : 'alert-danger'">
+                <h6>
+                  <i [class]="validationResult.success ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="me-2"></i>
+                  Resultado de Validación
+                </h6>
+                <p class="mb-2">{{ validationResult.message }}</p>
+                <div *ngIf="validationResult.errors && validationResult.errors.length > 0">
+                  <strong>Errores encontrados:</strong>
+                  <ul class="mb-0 mt-2">
+                    <li *ngFor="let error of validationResult.errors">{{ error }}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Import Results -->
+            <div *ngIf="importResult" class="import-results mb-4">
+              <div class="alert" [class]="importResult.success ? 'alert-success' : 'alert-danger'">
+                <h6>
+                  <i [class]="importResult.success ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="me-2"></i>
+                  Resultado de Importación
+                </h6>
+                <p class="mb-2">{{ importResult.message }}</p>
+                
+                <!-- Import Statistics -->
+                <div *ngIf="importResult.success && importResult.stats" class="import-stats mt-3">
+                  <strong>Estadísticas:</strong>
+                  <div class="row mt-2">
+                    <div class="col-md-6">
+                      <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-users text-primary me-2"></i>Usuarios creados: {{ importResult.stats.usersCreated }}</li>
+                        <li><i class="fas fa-user-edit text-info me-2"></i>Usuarios actualizados: {{ importResult.stats.usersUpdated }}</li>
+                        <li><i class="fas fa-chalkboard text-success me-2"></i>Clases creadas: {{ importResult.stats.classesCreated }}</li>
+                      </ul>
+                    </div>
+                    <div class="col-md-6">
+                      <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-chalkboard-teacher text-warning me-2"></i>Clases actualizadas: {{ importResult.stats.classesUpdated }}</li>
+                        <li><i class="fas fa-user-tag text-secondary me-2"></i>Roles creados: {{ importResult.stats.rolesCreated }}</li>
+                        <li><i class="fas fa-calculator text-dark me-2"></i>Total procesados: {{ importResult.stats.totalProcessed }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Import Errors -->
+                <div *ngIf="importResult.errors && importResult.errors.length > 0" class="import-errors mt-3">
+                  <strong>Errores encontrados:</strong>
+                  <ul class="mb-0 mt-2">
+                    <li *ngFor="let error of importResult.errors">{{ error }}</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -139,12 +319,33 @@
             </h6>
           </div>
           <div class="card-body">
-            <ul class="mb-0">
-              <li>Solo se aceptan archivos en formato Excel (.xlsx, .xls)</li>
-              <li>La primera fila debe contener los nombres de las columnas</li>
-              <li>Asegúrate de que los datos estén en el formato correcto</li>
-              <li>El proceso puede tardar unos minutos dependiendo del tamaño del archivo</li>
-            </ul>
+            <div class="row">
+              <div class="col-md-6">
+                <h6><i class="fas fa-file-excel me-2"></i>Formato de Archivos</h6>
+                <ul class="mb-3">
+                  <li>Solo se aceptan archivos en formato Excel (.xlsx, .xls)</li>
+                  <li>La primera fila debe contener los nombres de las columnas</li>
+                  <li>Los datos deben comenzar en la fila 2</li>
+                  <li>Use el botón "Validar Formato" antes de importar</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6><i class="fas fa-cogs me-2"></i>Tipos de Importación</h6>
+                <ul class="mb-3">
+                  <li><strong>Completa:</strong> Procesa múltiples hojas del archivo</li>
+                  <li><strong>Solo Grupos:</strong> Procesa únicamente la hoja "Grupos"</li>
+                  <li><strong>Solo Entregas:</strong> Procesa únicamente la hoja "Entregas"</li>
+                  <li><strong>Solo Estudiantes:</strong> Procesa únicamente la hoja "Estudiantes"</li>
+                  <li><strong>Solo Equipos:</strong> Procesa únicamente la hoja "Equipos"</li>
+                  <li>Consulte la información de formato mostrada arriba</li>
+                  <li>El proceso puede tardar unos minutos</li>
+                </ul>
+              </div>
+            </div>
+            <div class="alert alert-warning mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Importante:</strong> Valide siempre el formato antes de realizar la importación para evitar errores.
+            </div>
           </div>
         </div>
       </div>

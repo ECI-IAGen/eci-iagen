@@ -35,6 +35,7 @@ export class ClassComponent implements OnInit {
     description: '',
     semester: '',
     professorId: '',
+    laboratoryProfessorId: '',
     teamIds: [] as number[]
   };
 
@@ -96,6 +97,10 @@ export class ClassComponent implements OnInit {
   }
 
   getProfessorInitial(professorName: string): string {
+    return (professorName || '').charAt(0).toUpperCase();
+  }
+
+  getLaboratoryProfessorInitial(professorName: string): string {
     return (professorName || '').charAt(0).toUpperCase();
   }
 
@@ -175,6 +180,7 @@ export class ClassComponent implements OnInit {
         description: this.selectedClass.description || '',
         semester: this.selectedClass.semester || '',
         professorId: this.selectedClass.professorId || '',
+        laboratoryProfessorId: this.selectedClass.laboratoryProfessorId || '',
         teamIds: this.selectedClass.teamIds || []
       };
       
@@ -192,6 +198,8 @@ export class ClassComponent implements OnInit {
         description: this.classForm.description?.trim() || null,
         semester: this.classForm.semester?.trim() || null,
         professorId: parseInt(this.classForm.professorId as string),
+        laboratoryProfessorId: this.classForm.laboratoryProfessorId ? 
+          parseInt(this.classForm.laboratoryProfessorId as string) : null,
         teamIds: this.classForm.teamIds
       };
 
@@ -213,6 +221,8 @@ export class ClassComponent implements OnInit {
         description: this.classForm.description?.trim() || null,
         semester: this.classForm.semester?.trim() || null,
         professorId: parseInt(this.classForm.professorId as string),
+        laboratoryProfessorId: this.classForm.laboratoryProfessorId ? 
+          parseInt(this.classForm.laboratoryProfessorId as string) : null,
         teamIds: this.classForm.teamIds
       };
 
@@ -260,6 +270,7 @@ export class ClassComponent implements OnInit {
       description: '',
       semester: '',
       professorId: '',
+      laboratoryProfessorId: '',
       teamIds: []
     };
     this.selectedClass = null;
