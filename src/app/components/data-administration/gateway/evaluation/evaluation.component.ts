@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../../services/api.service';
+import { ApiService } from '../../../../services/api.service';
 import { 
   Evaluation, 
   User, 
@@ -11,8 +11,8 @@ import {
   EvaluationFormData, 
   AutoEvaluationResult,
   CriteriaData
-} from '../../../models/evaluation.models';
-import { Submission, Assignment, Team } from '../../../models/submission.models';
+} from '../../../../models/evaluation.models';
+import { Submission, Assignment, Team } from '../../../../models/submission.models';
 
 @Component({
   selector: 'app-evaluation',

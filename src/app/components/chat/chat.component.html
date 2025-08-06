@@ -1,0 +1,92 @@
+<div class="chat-container">
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-robot text-primary me-3" style="font-size: 1.5rem;"></i>
+        <div>
+          <h5 class="mb-0">Chat con IA ECI - {{ roleDisplayName }}</h5>
+          <small class="text-muted">
+            <i class="fas fa-circle text-success"></i>
+            Listo para chatear como {{ roleDisplayName }}
+          </small>
+        </div>
+      </div>
+      <div class="d-flex align-items-center">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+              <a routerLink="/" class="text-decoration-none">
+                <i class="fas fa-home me-1"></i>Inicio
+              </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Chat IA</li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Messages Area -->
+  <div class="chat-messages" #messagesContainer>
+    <div class="messages-content p-3">
+      <!-- Welcome Message -->
+      <div *ngIf="messages.length === 0" class="welcome-message text-center py-5">
+        <div class="welcome-icon mb-3">
+          <i class="fas fa-comments text-primary" style="font-size: 3rem;"></i>
+        </div>
+        <h6 class="text-muted mb-2">¡Hola! Soy tu asistente de IA</h6>
+        <p class="text-muted small">Puedes preguntarme sobre gestión educativa, evaluaciones, o cualquier tema
+          relacionado con ECI</p>
+      </div>
+
+      <!-- Messages -->
+      <div *ngFor="let message of messages; trackBy: trackByMessageId" class="message-wrapper mb-3">
+        <div class="message" [ngClass]="message.sender === 'user' ? 'user-message' : 'bot-message'">
+          <div class="message-content">
+            <div class="message-text" 
+                 [innerHTML]="message.sender === 'bot' ? renderMarkdown(message.message) : formatMessage(message.message)">
+            </div>
+            <div class="message-meta d-flex justify-content-between align-items-center mt-2">
+              <small class="text-muted">{{ formatTime(message.timestamp) }}</small>
+              <div class="message-status" *ngIf="message.sender === 'user'">
+                <i *ngIf="message.status === 'sending'" class="fas fa-clock text-muted"></i>
+                <i *ngIf="message.status === 'sent'" class="fas fa-check text-success"></i>
+                <i *ngIf="message.status === 'processing'" class="fas fa-spinner fa-spin text-primary"></i>
+                <i *ngIf="message.status === 'error'" class="fas fa-exclamation-triangle text-danger"></i>
+              </div>
+              <div class="message-status" *ngIf="message.sender === 'bot'">
+                <i *ngIf="message.status === 'streaming'" class="fas fa-spinner fa-pulse text-primary"></i>
+                <i *ngIf="message.status === 'completed'" class="fas fa-check-double text-success"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="chat-input border-top">
+    <div class="p-3">
+      <form (ngSubmit)="sendMessage()" class="d-flex gap-2">
+        <div class="flex-grow-1">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-user text-muted"></i>
+            </span>
+            <input type="text" class="form-control" [(ngModel)]="currentMessage" name="message"
+              placeholder="Escribe tu mensaje aquí..." [disabled]="isSending"
+              (keydown.enter)="$event.preventDefault(); sendMessage()"
+              #messageInput>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" [disabled]="!currentMessage.trim() || isSending"
+                (click)="sendMessage()">
+          <i *ngIf="!isSending" class="fas fa-paper-plane"></i>
+          <i *ngIf="isSending" class="fas fa-spinner fa-spin"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

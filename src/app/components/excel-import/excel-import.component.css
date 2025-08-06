@@ -1,0 +1,66 @@
+.excel-import-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+}
+
+.import-icon i {
+  font-size: 4rem;
+}
+
+.import-title {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #2c3e50;
+}
+
+.upload-area {
+  border: 2px dashed #28a745;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+  border-color: #20c997;
+  background-color: #e8f5e8;
+}
+
+.upload-zone {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-file {
+  border-radius: 8px;
+}
+
+.import-types .form-check {
+  padding: 10px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.import-types .form-check:hover {
+  background-color: #f8f9fa;
+  border-color: #28a745;
+}
+
+.import-types .form-check-input:checked + .form-check-label {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.breadcrumb {
+  background: transparent;
+  padding: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  color: #6c757d;
+}
