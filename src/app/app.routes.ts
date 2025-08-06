@@ -9,5 +9,6 @@ export const routes: Routes = [
   { path: 'data-administration', component: DataAdministrationComponent },
   { path: 'excel-import', component: ExcelImportComponent },
   { path: 'chat', component: ChatComponent },
+  { path: 'chat/:role', component: ChatComponent },
   { path: '**', redirectTo: '' }
 ];

@@ -20,12 +20,19 @@
         <div class="card-action">Acceder →</div>
       </a>
       
-      <a class="component-card" routerLink="/chat">
+      <div class="component-card chat-roles-card">
         <div class="card-icon">💬</div>
         <h3>Chat IA</h3>
         <p>Interactúa con nuestro asistente de inteligencia artificial</p>
-        <div class="card-action">Acceder →</div>
-      </a>
+        <div class="role-buttons">
+          <a class="btn btn-primary me-2" routerLink="/chat/coordinador">
+            <i class="fas fa-user-tie me-1"></i>Coordinador
+          </a>
+          <a class="btn btn-outline-primary" routerLink="/chat/profesor">
+            <i class="fas fa-chalkboard-teacher me-1"></i>Profesor
+          </a>
+        </div>
+      </div>
     </div>
   </main>
 </div>
