@@ -83,14 +83,27 @@
 
       <!-- Results -->
       <div *ngIf="originalityResults && !loading">
+        <!-- Success Message -->
+        <div class="alert alert-success mb-3" *ngIf="originalityResults.success">
+          <i class="fas fa-check-circle me-2"></i>
+          {{ originalityResults.message }}
+        </div>
+        
+        <!-- Error Message from Response -->
+        <div class="alert alert-warning mb-3" *ngIf="!originalityResults.success">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          {{ originalityResults.message }}
+        </div>
+
         <!-- Summary Card -->
         <div class="alert mb-4" [style.background-color]="getOverallRiskColor() + '20'" 
              [style.border-color]="getOverallRiskColor()">
           <div class="row align-items-center">
             <div class="col-md-8">
               <h6><i class="fas fa-chart-pie me-2"></i> Resumen del Análisis</h6>
-              <p class="mb-1"><strong>Assignment:</strong> {{ originalityResults.assignmentTitle }}</p>
-              <p class="mb-1"><strong>Comparaciones realizadas:</strong> {{ originalityResults.comparisons.length || 0 }}</p>
+              <p class="mb-1"><strong>Assignment:</strong> {{ originalityResults.statistics.assignmentTitle || assignmentTitle }}</p>
+              <p class="mb-1"><strong>Comparaciones realizadas:</strong> {{ originalityResults.similarities.length || 0 }}</p>
+              <p class="mb-1"><strong>Promedio de similitud:</strong> {{ originalityResults.statistics.averageSimilarity.toFixed(1) || 0 }}%</p>
               <p class="mb-0"><strong>Nivel de riesgo general:</strong> 
                 <span class="badge badge-pill ms-2" 
                       [style.background-color]="getOverallRiskColor()"
@@ -119,7 +132,7 @@
         </div>
 
         <!-- Comparisons Table -->
-        <div *ngIf="originalityResults.comparisons && originalityResults.comparisons.length > 0">
+        <div *ngIf="originalityResults.similarities && originalityResults.similarities.length > 0">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h6><i class="fas fa-table me-2"></i>Comparaciones de Similitud</h6>
             <button class="btn btn-outline-success btn-sm" (click)="exportResults()">
@@ -139,7 +152,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let comparison of originalityResults.comparisons; let i = index"
+                <tr *ngFor="let comparison of originalityResults.similarities; let i = index"
                     [class]="'table-row-' + getSimilarityLevel(comparison.similarity).toLowerCase()">
                   <td>
                     <div class="team-info">
@@ -203,7 +216,7 @@
         </div>
 
         <!-- No Significant Similarities -->
-        <div *ngIf="!originalityResults.comparisons || originalityResults.comparisons.length === 0" 
+        <div *ngIf="!originalityResults.similarities || originalityResults.similarities.length === 0" 
              class="alert alert-success">
           <i class="fas fa-check-circle me-2"></i>
           <strong>¡Excelente!</strong> No se encontraron similitudes significativas entre las entregas.

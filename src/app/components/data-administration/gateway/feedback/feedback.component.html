@@ -22,6 +22,9 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2><i class="fas fa-comments me-2"></i>Gestión de Retroalimentación</h2>
     <div>
+      <button class="btn btn-info me-2" (click)="openAutoFeedbackModal()">
+        <i class="fas fa-robot me-2"></i>Evaluación Automática
+      </button>
       <button class="btn btn-success me-2" (click)="downloadFeedbacks()">
         <i class="fas fa-download me-2"></i>Descargar Retroalimentaciones
       </button>
@@ -46,19 +49,19 @@
         <div class="col-md-3">
           <div class="form-group">
             <label for="assignmentFilter" class="form-label">Asignación:</label>
-            <select id="assignmentFilter" class="form-select" [(ngModel)]="filters.assignment" (change)="applyFilters()">
-              <option value="">Todas las asignaciones</option>
-              <option *ngFor="let assignment of assignments" [value]="assignment.title">{{ assignment.title }}</option>
-            </select>
+            <input list="assignmentOptions" id="assignmentFilter" class="form-control" [(ngModel)]="filters.assignment" (input)="applyFilters()" placeholder="Escribe para filtrar..."/>
+            <datalist id="assignmentOptions">
+              <option *ngFor="let assignment of assignments" [value]="assignment.title"></option>
+            </datalist>
           </div>
         </div>
         <div class="col-md-3">
           <div class="form-group">
             <label for="teamFilter" class="form-label">Equipo:</label>
-            <select id="teamFilter" class="form-select" [(ngModel)]="filters.team" (change)="applyFilters()">
-              <option value="">Todos los equipos</option>
-              <option *ngFor="let team of teams" [value]="team.name">{{ team.name }}</option>
-            </select>
+            <input list="teamOptions" id="teamFilter" class="form-control" [(ngModel)]="filters.team" (input)="applyFilters()" placeholder="Escribe para filtrar..." />
+            <datalist id="teamOptions">
+              <option *ngFor="let team of teams" [value]="team.name"></option>
+            </datalist>
           </div>
         </div>
         <div class="col-md-3">
@@ -66,7 +69,9 @@
             <label for="typeFilter" class="form-label">Tipo:</label>
             <select id="typeFilter" class="form-select" [(ngModel)]="filters.feedbackType" (change)="applyFilters()">
               <option value="">Todos los tipos</option>
-              <option *ngFor="let type of feedbackTypes" [value]="type">{{ getFeedbackTypeLabel(type) }}</option>
+              <option *ngFor="let type of (availableFeedbackTypes.length ? availableFeedbackTypes : feedbackTypes)" [value]="type">
+                {{ getFeedbackTypeLabel(type) }}
+              </option>
             </select>
           </div>
         </div>
@@ -202,7 +207,9 @@
               <div class="mb-3">
                 <label for="typeSelect" class="form-label">Tipo de Retroalimentación *</label>
                 <select id="typeSelect" class="form-select" [(ngModel)]="newFeedback.feedbackType" name="feedbackType" required>
-                  <option *ngFor="let type of feedbackTypes" [value]="type">{{ getFeedbackTypeLabel(type) }}</option>
+                  <option *ngFor="let type of (availableFeedbackTypes.length ? availableFeedbackTypes : feedbackTypes)" [value]="type">
+                    {{ getFeedbackTypeLabel(type) }}
+                  </option>
                 </select>
               </div>
             </div>
@@ -332,8 +339,89 @@
   </div>
 </div>
 
+<!-- Modal para Evaluación Automática -->
+<div class="modal" [class.show]="showAutoFeedbackModal" [style.display]="showAutoFeedbackModal ? 'block' : 'none'" *ngIf="showAutoFeedbackModal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-robot me-2"></i>Evaluación Automática de Equipos
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModals()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>Información:</strong> Selecciona una entrega para generar retroalimentación automática usando inteligencia artificial.
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">Filtrar por Asignación:</label>
+          <input list="autoAssignmentOptions" class="form-control" [(ngModel)]="filters.assignment" (input)="applyFilters()" placeholder="Escribe para filtrar..."/>
+          <datalist id="autoAssignmentOptions">
+            <option *ngFor="let assignment of assignments" [value]="assignment.title"></option>
+          </datalist>
+        </div>
+
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-hover">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th>Asignación</th>
+                <th>Equipo</th>
+                <th>Fecha de Entrega</th>
+                <th>Estado</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let submission of filteredSubmissions">
+                <td>
+                  {{ getSubmissionInfo(submission.id)?.assignmentTitle || 'N/A' }}
+                </td>
+                <td>
+                  <span class="badge bg-primary">
+                    {{ getSubmissionInfo(submission.id)?.teamName || 'N/A' }}
+                  </span>
+                </td>
+                <td>
+                  <small>{{ formatSubmissionDate(submission.submittedAt) }}</small>
+                </td>
+                <td>
+                  <span class="badge" [class]="submission.fileUrl ? 'bg-success' : 'bg-warning'">
+                    {{ submission.fileUrl ? 'Completada' : 'Pendiente' }}
+                  </span>
+                </td>
+                <td>
+                  <button 
+                    class="btn btn-sm btn-info" 
+                    (click)="generateAutoFeedback(submission.id)"
+                    [disabled]="!submission.fileUrl || isLoading"
+                    title="Generar evaluación automática">
+                    <i class="fas fa-robot me-1"></i>
+                    <span *ngIf="!isLoading">Evaluar</span>
+                    <span *ngIf="isLoading" class="spinner-border spinner-border-sm"></span>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredSubmissions.length === 0">
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="fas fa-search me-2"></i>No se encontraron entregas
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModals()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal backdrop -->
 <div class="modal-backdrop fade" 
-     [class.show]="showCreateModal || showViewModal"
-     *ngIf="showCreateModal || showViewModal">
+     [class.show]="showCreateModal || showViewModal || showAutoFeedbackModal"
+     *ngIf="showCreateModal || showViewModal || showAutoFeedbackModal">
 </div>

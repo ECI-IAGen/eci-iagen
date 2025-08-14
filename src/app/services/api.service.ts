@@ -376,14 +376,22 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  /**
+   * Generate automatic team feedback for a submission
+   */
+  generateTeamFeedback(submissionId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/feedbacks/auto/equipo/${submissionId}`, {})
+      .pipe(catchError(this.handleError));
+  }
+
   // =================== ANÁLISIS DE ORIGINALIDAD (JPLAG) ===================
   checkOriginality(assignmentData: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/jplag/detect`, assignmentData, this.httpOptions)
+    return this.http.post<any>(`${this.baseUrl}/plagiarism/detect/${assignmentData.assignmentId}`, assignmentData, this.httpOptions)
       .pipe(catchError(this.handleError));
   }
 
   checkJPlagHealth(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/jplag/health`)
+    return this.http.get<any>(`${this.baseUrl}/plagiarism/health`)
       .pipe(catchError(this.handleError));
   }
 

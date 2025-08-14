@@ -56,37 +56,41 @@
         <div class="col-md-3">
           <div class="form-group">
             <label for="classFilter" class="form-label">Clase:</label>
-            <select id="classFilter" class="form-select" [(ngModel)]="filters.class" (change)="applyFilters()">
-              <option value="">Todas las clases</option>
-              <option *ngFor="let class of classes" [value]="class.name">{{ class.name }}</option>
-            </select>
+            <input list="classOptions" id="classFilter" class="form-control" [(ngModel)]="filters.class" (input)="applyFilters()"
+                   placeholder="Escribe para filtrar..." />
+            <datalist id="classOptions">
+              <option *ngFor="let c of classes" [value]="c.name"></option>
+            </datalist>
           </div>
         </div>
         <div class="col-md-3">
           <div class="form-group">
             <label for="assignmentFilter" class="form-label">Asignación:</label>
-            <select id="assignmentFilter" class="form-select" [(ngModel)]="filters.assignment" (change)="applyFilters()">
-              <option value="">Todas las asignaciones</option>
-              <option *ngFor="let assignment of assignments" [value]="assignment.title">{{ assignment.title }}</option>
-            </select>
+            <input list="assignmentOptions" id="assignmentFilter" class="form-control" [(ngModel)]="filters.assignment" (input)="applyFilters()"
+                   placeholder="Escribe para filtrar..." />
+            <datalist id="assignmentOptions">
+              <option *ngFor="let a of assignments" [value]="a.title"></option>
+            </datalist>
           </div>
         </div>
         <div class="col-md-3">
           <div class="form-group">
             <label for="teamFilter" class="form-label">Equipo:</label>
-            <select id="teamFilter" class="form-select" [(ngModel)]="filters.team" (change)="applyFilters()">
-              <option value="">Todos los equipos</option>
-              <option *ngFor="let team of teams" [value]="team.name">{{ team.name }}</option>
-            </select>
+            <input list="teamOptions" id="teamFilter" class="form-control" [(ngModel)]="filters.team" (input)="applyFilters()"
+                   placeholder="Escribe para filtrar..." />
+            <datalist id="teamOptions">
+              <option *ngFor="let t of teams" [value]="t.name"></option>
+            </datalist>
           </div>
         </div>
         <div class="col-md-3">
           <div class="form-group">
             <label for="evaluatorFilter" class="form-label">Evaluador:</label>
-            <select id="evaluatorFilter" class="form-select" [(ngModel)]="filters.evaluator" (change)="applyFilters()">
-              <option value="">Todos los evaluadores</option>
-              <option *ngFor="let evaluator of evaluators" [value]="evaluator.name">{{ evaluator.name }}</option>
-            </select>
+            <input list="evaluatorOptions" id="evaluatorFilter" class="form-control" [(ngModel)]="filters.evaluator" (input)="applyFilters()"
+                   placeholder="Escribe para filtrar..." />
+            <datalist id="evaluatorOptions">
+              <option *ngFor="let ev of evaluators" [value]="ev.name"></option>
+            </datalist>
           </div>
         </div>
       </div>
@@ -96,7 +100,7 @@
             <label for="typeFilter" class="form-label">Tipo:</label>
             <select id="typeFilter" class="form-select" [(ngModel)]="filters.type" (change)="applyFilters()">
               <option value="">Todos los tipos</option>
-              <option *ngFor="let type of uniqueEvaluationTypes" [value]="type">{{ getEvaluationTypeLabel(type) }}</option>
+              <option *ngFor="let type of uniqueEvaluationTypes" [value]="type">{{ type }}</option>
             </select>
           </div>
         </div>
@@ -229,7 +233,7 @@
           </td>
           <td>
             <span class="badge evaluation-type-badge" [ngClass]="getTypeBadgeClass(evaluation.evaluationType)">
-              {{ getEvaluationTypeLabel(evaluation.evaluationType) }}
+              {{ evaluation.evaluationType }}
             </span>
           </td>
           <td>{{ evaluation.evaluatorName || 'Sin evaluador' }}</td>
@@ -310,7 +314,7 @@
               <div class="mb-3">
                 <label for="typeSelect" class="form-label">Tipo de Evaluación</label>
                 <select id="typeSelect" class="form-select" [(ngModel)]="newEvaluation.evaluationType" name="evaluationType" required>
-                  <option *ngFor="let type of uniqueEvaluationTypes" [value]="type">{{ getEvaluationTypeLabel(type) }}</option>
+                  <option *ngFor="let type of uniqueEvaluationTypes" [value]="type">{{ type }}</option>
                 </select>
               </div>
             </div>
@@ -460,7 +464,7 @@
                 <td><strong>Tipo:</strong></td>
                 <td>
                   <span class="badge" [ngClass]="getTypeBadgeClass(editingEvaluation.evaluationType)">
-                    {{ getEvaluationTypeLabel(editingEvaluation.evaluationType) }}
+                    {{ editingEvaluation.evaluationType }}
                   </span>
                 </td>
               </tr>

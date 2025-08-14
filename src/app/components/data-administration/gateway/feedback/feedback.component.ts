@@ -16,9 +16,12 @@ import { marked } from 'marked';
 export class FeedbackComponent implements OnInit {
   feedbacks: Feedback[] = [];
   filteredFeedbacks: Feedback[] = [];
+  // Tipos disponibles detectados en los feedbacks existentes (para filtros)
+  availableFeedbackTypes: string[] = [];
   
   // Data for dropdowns
   submissions: Submission[] = [];
+  filteredSubmissions: Submission[] = [];
   assignments: Assignment[] = [];
   teams: Team[] = [];
 
@@ -33,6 +36,7 @@ export class FeedbackComponent implements OnInit {
   // Modal state
   showCreateModal = false;
   showViewModal = false;
+  showAutoFeedbackModal = false;
   editingFeedback: Feedback | null = null;
 
   // Form data
@@ -74,11 +78,13 @@ export class FeedbackComponent implements OnInit {
 
       this.feedbacks = feedbacks || [];
       this.submissions = submissions || [];
+      this.filteredSubmissions = [...this.submissions];
       this.assignments = assignments || [];
       this.teams = teams || [];
 
       this.enrichFeedbackData();
       this.filteredFeedbacks = [...this.feedbacks];
+  this.updateAvailableFeedbackTypes();
 
     } catch (error: any) {
       this.showError('Error al cargar datos: ' + error.message);
@@ -139,6 +145,19 @@ export class FeedbackComponent implements OnInit {
 
       return true;
     });
+
+    // Also filter submissions for the auto-feedback modal
+    this.filterSubmissions();
+  }
+
+  filterSubmissions() {
+    this.filteredSubmissions = this.submissions.filter(submission => {
+      if (this.filters.assignment) {
+        const submissionInfo = this.getSubmissionInfo(submission.id);
+        return submissionInfo?.assignmentTitle === this.filters.assignment;
+      }
+      return true;
+    });
   }
 
   clearAllFilters() {
@@ -150,6 +169,23 @@ export class FeedbackComponent implements OnInit {
       dateTo: ''
     };
     this.filteredFeedbacks = [...this.feedbacks];
+    this.filteredSubmissions = [...this.submissions];
+  }
+
+  private updateAvailableFeedbackTypes() {
+    const set = new Set<string>();
+    (this.feedbacks || []).forEach(f => {
+      if (f.feedbackType) set.add(f.feedbackType);
+    });
+    // Ordenar por etiqueta legible
+    this.availableFeedbackTypes = Array.from(set).sort((a, b) =>
+      this.getFeedbackTypeLabel(a).localeCompare(this.getFeedbackTypeLabel(b), 'es')
+    );
+
+    // Si el filtro activo no existe ya en la lista, lo limpiamos
+    if (this.filters.feedbackType && !this.availableFeedbackTypes.includes(this.filters.feedbackType)) {
+      this.filters.feedbackType = '';
+    }
   }
 
   openCreateModal() {
@@ -175,9 +211,14 @@ export class FeedbackComponent implements OnInit {
     this.showViewModal = true;
   }
 
+  openAutoFeedbackModal() {
+    this.showAutoFeedbackModal = true;
+  }
+
   closeModals() {
     this.showCreateModal = false;
     this.showViewModal = false;
+    this.showAutoFeedbackModal = false;
     this.editingFeedback = null;
   }
 
@@ -269,6 +310,10 @@ export class FeedbackComponent implements OnInit {
     });
   }
 
+  formatSubmissionDate(date: string | number[] | undefined): string {
+    return this.formatFeedbackDate(date);
+  }
+
   private parseFeedbackDate(date: string | Date | number[] | undefined): Date | null {
     if (!date) return null;
     
@@ -283,13 +328,62 @@ export class FeedbackComponent implements OnInit {
   }
 
   downloadFeedbacks() {
-    // Implementation for downloading feedbacks
-    console.log('Downloading all feedbacks...');
+    this.exportFeedbacksToCSV(this.feedbacks, 'feedbacks_todos.csv');
   }
 
   downloadFilteredFeedbacks() {
-    // Implementation for downloading filtered feedbacks
-    console.log('Downloading filtered feedbacks...');
+    this.exportFeedbacksToCSV(this.filteredFeedbacks, 'feedbacks_filtrados.csv');
+  }
+
+  private exportFeedbacksToCSV(feedbacks: Feedback[], filename: string) {
+    if (!feedbacks || feedbacks.length === 0) {
+      this.showError('No hay retroalimentaciones para exportar.');
+      return;
+    }
+
+    // Define columns to export
+    const columns = [
+      'ID',
+      'Tipo',
+      'Fecha',
+      'Asignación',
+      'Equipo',
+      'Contenido',
+      'Fortalezas',
+      'Mejoras',
+      'URL Entrega'
+    ];
+
+    // Build CSV rows
+    const rows = feedbacks.map(fb => [
+      fb.id,
+      this.getFeedbackTypeLabel(fb.feedbackType),
+      this.formatFeedbackDate(fb.feedbackDate),
+      fb.assignmentTitle || '',
+      fb.teamName || '',
+      fb.submissionUrl || '',
+      (fb.content || '').replace(/\r?\n/g, ' ').replace(/"/g, '""'),
+      (fb.strengths || '').replace(/\r?\n/g, ' ').replace(/"/g, '""'),
+      (fb.improvements || '').replace(/\r?\n/g, ' ').replace(/"/g, '""')
+    ]);
+
+    // Convert to CSV string with BOM for UTF-8
+    const csvContent = [
+      '\uFEFF' + columns.join(','),
+      ...rows.map(row => row.map(field => `"${field}"`).join(','))
+    ].join('\r\n');
+
+    // Download as file with UTF-8 BOM
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showSuccess('Archivo CSV descargado correctamente.');
   }
 
   private showSuccess(message: string) {
@@ -324,5 +418,39 @@ export class FeedbackComponent implements OnInit {
 
   createFeedback() {
     this.openCreateModal();
+  }
+
+  async generateAutoFeedback(submissionId: number) {
+    if (!confirm('¿Estás seguro de que quieres generar retroalimentación automática para esta entrega?')) {
+      return;
+    }
+
+    try {
+      this.isLoading = true;
+      const feedback = await this.apiService.generateTeamFeedback(submissionId).toPromise();
+      this.showSuccess('Retroalimentación automática generada correctamente');
+      
+      // Close the modal using Angular state
+      this.showAutoFeedbackModal = false;
+      
+      this.loadData(); // Refresh the data to show the new feedback
+    } catch (error: any) {
+      this.showError('Error al generar retroalimentación automática: ' + error.message);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getSubmissionInfo(submissionId: number): { assignmentTitle?: string, teamName?: string } | null {
+    const submission = this.submissions.find(s => s.id === submissionId);
+    if (!submission) return null;
+
+    const assignment = this.assignments.find(a => a.id === submission.assignmentId);
+    const team = this.teams.find(t => t.id === submission.teamId);
+
+    return {
+      assignmentTitle: assignment?.title,
+      teamName: team?.name
+    };
   }
 }

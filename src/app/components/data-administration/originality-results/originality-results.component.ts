@@ -19,10 +19,18 @@ interface ComparisonResult {
   similarity: number;
 }
 
-interface OriginalityResponse {
-  assignmentId: number;
+interface OriginalityStatistics {
   assignmentTitle: string;
-  comparisons: ComparisonResult[];
+  totalComparisons: number;
+  assignmentId: number;
+  averageSimilarity: number;
+}
+
+interface OriginalityResponse {
+  similarities: ComparisonResult[];
+  success: boolean;
+  message: string;
+  statistics: OriginalityStatistics;
 }
 
 @Component({
@@ -93,9 +101,9 @@ export class OriginalityResultsComponent implements OnInit {
         this.originalityResults = response;
         this.loading = false;
         
-        // Sort comparisons by similarity (highest first)
-        if (this.originalityResults && this.originalityResults.comparisons) {
-          this.originalityResults.comparisons.sort((a, b) => b.similarity - a.similarity);
+        // Sort similarities by similarity (highest first)
+        if (this.originalityResults && this.originalityResults.similarities) {
+          this.originalityResults.similarities.sort((a, b) => b.similarity - a.similarity);
         }
       },
       error: (error: any) => {
@@ -142,11 +150,11 @@ export class OriginalityResultsComponent implements OnInit {
   }
 
   getRiskSummary(): { high: number, medium: number, low: number, minimal: number } {
-    if (!this.originalityResults?.comparisons) {
+    if (!this.originalityResults?.similarities) {
       return { high: 0, medium: 0, low: 0, minimal: 0 };
     }
 
-    return this.originalityResults.comparisons.reduce((acc, comparison) => {
+    return this.originalityResults.similarities.reduce((acc, comparison) => {
       if (comparison.similarity >= 80) acc.high++;
       else if (comparison.similarity >= 60) acc.medium++;
       else if (comparison.similarity >= 40) acc.low++;
@@ -192,7 +200,7 @@ export class OriginalityResultsComponent implements OnInit {
     if (!this.originalityResults) return '';
 
     const headers = ['Equipo 1', 'Equipo 2', 'Similitud (%)', 'Nivel de Riesgo', 'URL Repositorio 1', 'URL Repositorio 2'];
-    const rows = this.originalityResults.comparisons.map(comparison => [
+    const rows = this.originalityResults.similarities.map(comparison => [
       this.getTeamName(comparison.submissionId1),
       this.getTeamName(comparison.submissionId2),
       comparison.similarity.toFixed(1),

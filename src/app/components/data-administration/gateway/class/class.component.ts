@@ -96,10 +96,6 @@ export class ClassComponent implements OnInit {
     return classItem.id;
   }
 
-  getProfessorInitial(professorName: string): string {
-    return (professorName || '').charAt(0).toUpperCase();
-  }
-
   getLaboratoryProfessorInitial(professorName: string): string {
     return (professorName || '').charAt(0).toUpperCase();
   }

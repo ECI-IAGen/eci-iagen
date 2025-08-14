@@ -50,19 +50,6 @@
   gap: 0.5rem;
 }
 
-.professor-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #6c757d;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 0.8rem;
-}
-
 .semester-badge {
   background-color: #e9ecef;
   color: #495057;
