@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../../services/api.service';
 import { OriginalityResultsComponent } from '../../originality-results/originality-results.component';
-import { 
-  Evaluation, 
-  User, 
-  Class, 
-  AutoEvaluationOptions, 
-  FilterOptions, 
-  EvaluationFormData, 
+import {
+  Evaluation,
+  User,
+  Class,
+  AutoEvaluationOptions,
+  FilterOptions,
+  EvaluationFormData,
   AutoEvaluationResult,
   CriteriaData
 } from '../../../../models/evaluation.models';
@@ -25,7 +25,7 @@ import { Submission, Assignment, Team } from '../../../../models/submission.mode
 export class EvaluationComponent implements OnInit {
   evaluations: Evaluation[] = [];
   filteredEvaluations: Evaluation[] = [];
-  
+
   // Filter data
   classes: Class[] = [];
   assignments: Assignment[] = [];
@@ -75,7 +75,7 @@ export class EvaluationComponent implements OnInit {
   showOriginalitySection = false;
   selectedAssignmentForOriginality: Assignment | null = null;
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService) { }
 
   ngOnInit() {
     this.loadData();
@@ -84,7 +84,7 @@ export class EvaluationComponent implements OnInit {
   async loadData() {
     try {
       this.isLoading = true;
-      
+
       // Load all required data
       const [evaluations, classes, assignments, teams, users, submissions] = await Promise.all([
         this.apiService.getEvaluations().toPromise(),
@@ -122,7 +122,7 @@ export class EvaluationComponent implements OnInit {
       const submission = this.submissions.find(s => s.id === evaluation.submissionId);
       if (submission) {
         evaluation.submissionUrl = submission.fileUrl; // Use fileUrl instead of repositoryUrl
-        
+
         // Find assignment details
         const assignment = this.assignments.find(a => a.id === submission.assignmentId);
         if (assignment) {
@@ -142,7 +142,7 @@ export class EvaluationComponent implements OnInit {
         evaluation.evaluatorName = evaluator.name;
       }
     });
-    
+
     // Update unique evaluation types after enriching data
     this.updateUniqueEvaluationTypes();
   }
@@ -320,9 +320,9 @@ export class EvaluationComponent implements OnInit {
     // Check if this is a good practices evaluation (asynchronous)
     const isGoodPractices = evaluationType === 'GOOD_PRACTICES' || evaluationType === 'GOOD_PRACTICES_AI' || evaluationType === 'good-practices';
     const isUsingIA = evaluationType === 'GOOD_PRACTICES_AI' || this.autoEvaluationOptions.usingIA;
-    
-    let confirmMessage = `¿Estás seguro de que quieres iniciar el análisis automático de ${this.getEvaluationTypeLabel(evaluationType)}?`;
-    
+
+    let confirmMessage = `¿Estás seguro de que quieres iniciar el análisis automático de ${evaluationType}?`;
+
     if (isGoodPractices) {
       if (isUsingIA) {
         confirmMessage += '\n\n⚠️ ADVERTENCIA: El análisis con Inteligencia Artificial puede tardar varios minutos en completarse.';
@@ -331,21 +331,21 @@ export class EvaluationComponent implements OnInit {
     } else {
       confirmMessage += '\n\nEl análisis se completará inmediatamente.';
     }
-    
+
     if (!confirm(confirmMessage)) {
       return;
     }
 
     try {
       this.isLoading = true;
-      
+
       // Close modal
       this.showAutoEvaluateModal = false;
-      
+
       if (evaluationType === 'SCHEDULER' || evaluationType === 'scheduler' || evaluationType === 'commits') {
         // Synchronous evaluation for GitHub commits/schedule
         const result = await this.apiService.autoEvaluateGitHubCommits(this.selectedSubmission.id, evaluatorId).toPromise();
-        
+
         if (result) {
           this.autoEvaluationResult = result;
           this.showAutoEvaluationResults = true;
@@ -353,19 +353,19 @@ export class EvaluationComponent implements OnInit {
           // Reload data to show the new evaluation
           this.loadData();
         }
-        
+
       } else if (isGoodPractices) {
         // Asynchronous evaluation for good practices
         await this.apiService.autoEvaluateGoodPractices(
-          this.selectedSubmission.id, 
-          evaluatorId, 
+          this.selectedSubmission.id,
+          evaluatorId,
           isUsingIA
         ).toPromise();
-        
-        const typeMessage = this.getEvaluationTypeLabel(evaluationType);
+
+        const typeMessage = evaluationType;
         this.showSuccess(`Análisis de ${typeMessage} iniciado exitosamente. Los resultados aparecerán automáticamente cuando estén listos.`);
       }
-      
+
       // Reset selections
       this.selectedSubmission = null;
       this.autoEvaluationOptions.usingIA = false;
@@ -379,7 +379,7 @@ export class EvaluationComponent implements OnInit {
 
   formatCriteriaDisplay(evaluation: Evaluation): string {
     let criteriaData: any = {};
-    
+
     try {
       criteriaData = evaluation.criteriaJson ? JSON.parse(evaluation.criteriaJson) : {};
     } catch (e) {
@@ -394,141 +394,314 @@ export class EvaluationComponent implements OnInit {
     return this.formatGenericCriteriaDisplay(criteriaData, evaluation.evaluationType);
   }
 
+  private formatCheckstyleCriteria(criteriaData: any): string {
+    // Check for new structure with summary and patterns
+    if (!criteriaData.summary && !criteriaData.results) {
+      return '<div class="alert alert-warning">No se encontraron resultados de Checkstyle.</div>';
+    }
+
+    let html = '<div class="checkstyle-criteria">';
+
+    // Handle new JSON structure
+    if (criteriaData.summary) {
+      const summary = criteriaData.summary;
+      const totalErrors = summary.total_errors || 0;
+      const totalWarnings = summary.total_warnings || 0;
+      const totalFiles = summary.total_files || 0;
+      const analysisTime = summary.analysis_time || 0;
+
+      // Header with repository info and report link
+      html += '<div class="row mb-3">';
+      html += '<div class="col-md-8">';
+      html += '<h6 class="text-primary mb-1"><i class="fas fa-bug me-2"></i>Resultados de Checkstyle</h6>';
+      if (criteriaData.repository) {
+        html += `<small class="text-muted"><i class="fab fa-github me-1"></i>Repositorio: ${criteriaData.repository.owner}/${criteriaData.repository.name}</small>`;
+      }
+      html += '</div>';
+
+      // HTML Report link in header
+      if (criteriaData.html_url) {
+        html += '<div class="col-md-4 text-end">';
+        html += `<a href="${criteriaData.html_url}" target="_blank" class="btn btn-primary btn-sm">
+          <i class="fas fa-external-link-alt me-1"></i>Ver Reporte Detallado
+        </a>`;
+        html += '</div>';
+      }
+      html += '</div>';
+
+      // Summary metrics row
+      html += '<div class="row mb-3">';
+
+      // Left column - Summary
+      html += '<div class="col-md-6">';
+      html += '<div class="card h-100">';
+      html += '<div class="card-header bg-primary text-white"><i class="fas fa-chart-bar me-2"></i>Resumen</div>';
+      html += '<div class="card-body">';
+
+      // Total errors with color coding
+      let errorColorClass = 'text-success'; // Green for 0 errors
+      if (totalErrors > 0 && totalErrors <= 10) {
+        errorColorClass = 'text-warning'; // Yellow for 1-10 errors
+      } else if (totalErrors > 10) {
+        errorColorClass = 'text-danger'; // Red for >10 errors
+      }
+
+      html += `<div class="metric-item mb-2">
+        <strong>Total de errores:</strong> 
+        <span class="badge bg-danger fs-6">${totalErrors}</span>
+      </div>`;
+
+      html += `<div class="metric-item mb-2">
+        <strong>Total de advertencias:</strong> 
+        <span class="badge bg-warning">${totalWarnings}</span>
+      </div>`;
+
+      html += `<div class="metric-item mb-2">
+        <strong>Archivos analizados:</strong> 
+        <span class="badge bg-info">${totalFiles}</span>
+      </div>`;
+
+      html += `<div class="metric-item mb-2">
+        <strong>Tiempo de análisis:</strong> 
+        <span class="badge bg-secondary">${analysisTime.toFixed(2)}s</span>
+      </div>`;
+
+      html += '</div></div></div>';
+
+      // Right column - Pattern breakdown
+      html += '<div class="col-md-6">';
+      html += '<div class="card h-100">';
+      html += '<div class="card-header bg-info text-white"><i class="fas fa-list me-2"></i>Patrones de Error</div>';
+      html += '<div class="card-body" style="max-height: 300px; overflow-y: auto;">';
+
+      if (criteriaData.patterns && Object.keys(criteriaData.patterns).length > 0) {
+        // Sort patterns by count (descending)
+        const sortedPatterns = Object.entries(criteriaData.patterns)
+          .sort(([, a]: any, [, b]: any) => b.count - a.count);
+
+        sortedPatterns.forEach(([patternName, patternData]: any) => {
+          const badgeClass = patternData.type === 'ERROR' ? 'bg-danger' : 'bg-warning';
+          html += `<div class="metric-item mb-2 d-flex justify-content-between align-items-center">
+            <span class="text-sm">${patternName}:</span>
+            <span class="badge ${badgeClass}">${patternData.count}</span>
+          </div>`;
+        });
+      } else {
+        html += '<div class="text-muted">No se encontraron patrones específicos</div>';
+      }
+
+      html += '</div></div></div>';
+      html += '</div>';
+
+    } else if (criteriaData.results) {
+      // Handle legacy structure
+      const results = criteriaData.results;
+      const errorCount = results.errors ? results.errors.length : 0;
+
+      // Determine color based on error count (more errors = more red)
+      let colorClass = 'text-success'; // Green for 0 errors
+      if (errorCount > 0 && errorCount <= 5) {
+        colorClass = 'text-warning'; // Yellow for 1-5 errors
+      } else if (errorCount > 5) {
+        colorClass = 'text-danger'; // Red for >5 errors
+      }
+
+      html += '<h6><i class="fas fa-bug me-2"></i>Resultados de Checkstyle</h6>';
+      html += `<p><strong>Total de errores:</strong> <span class="fw-bold ${colorClass}">${errorCount}</span></p>`;
+
+      if (results.html_url) {
+        html += `<p>
+          <a href="${results.html_url}" target="_blank" class="btn btn-primary btn-sm">
+            <i class="fas fa-external-link-alt me-2"></i>Ver reporte detallado de Checkstyle
+          </a>
+        </p>`;
+      }
+
+      if (results.errors && results.errors.length > 0) {
+        html += '<h6>Detalle de errores:</h6>';
+        html += '<ul class="list-group">';
+        results.errors.forEach((error: any) => {
+          html += `<li class="list-group-item">
+            <strong>Archivo:</strong> ${error.file} (Línea: ${error.line})<br>
+            <strong>Mensaje:</strong> ${error.message}
+          </li>`;
+        });
+        html += '</ul>';
+      }
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  private formatGithubSchedule(criteriaData: any): string {
+    let html = '<div class="github-schedule-criteria">';
+
+    // Header
+    html += '<div class="row mb-3">';
+    html += '<div class="col-12">';
+    html += '<h6 class="text-primary"><i class="fas fa-calendar-alt me-2"></i>Análisis de Cronograma GitHub</h6>';
+    html += '</div>';
+    html += '</div>';
+
+    // Main metrics row
+    html += '<div class="row">';
+
+    // Left column - Score and basic metrics
+    html += '<div class="col-md-6">';
+    html += '<div class="card h-100">';
+    html += '<div class="card-header bg-primary text-white"><i class="fas fa-chart-line me-2"></i>Métricas Principales</div>';
+    html += '<div class="card-body">';
+
+    // Score
+    if (criteriaData.finalScore !== undefined || criteriaData.score !== undefined) {
+      const score = criteriaData.finalScore || criteriaData.score;
+      const scoreClass = score >= 4 ? 'bg-success' : score >= 3 ? 'bg-warning' : 'bg-danger';
+      html += `<div class="metric-item mb-3">
+        <strong>Puntuación Final:</strong> 
+        <span class="badge ${scoreClass} fs-6">${score}/5</span>
+      </div>`;
+    }
+
+    // Late status
+    if (criteriaData.isLate !== undefined) {
+      const lateClass = criteriaData.isLate ? 'bg-danger' : 'bg-success';
+      const lateText = criteriaData.isLate ? 'Sí' : 'No';
+      html += `<div class="metric-item mb-2">
+        <strong>Entrega tardía:</strong> 
+        <span class="badge ${lateClass}">${lateText}</span>
+      </div>`;
+    }
+
+    // Late days
+    if (criteriaData.lateDays !== undefined) {
+      const lateDaysClass = criteriaData.lateDays > 0 ? 'bg-warning' : 'bg-success';
+      html += `<div class="metric-item mb-2">
+        <strong>Días de retraso:</strong> 
+        <span class="badge ${lateDaysClass}">${criteriaData.lateDays}</span>
+      </div>`;
+    }
+
+    // Penalty
+    if (criteriaData.totalPenalty !== undefined) {
+      const penaltyClass = criteriaData.totalPenalty > 0 ? 'bg-danger' : 'bg-success';
+      html += `<div class="metric-item mb-2">
+        <strong>Penalización total:</strong> 
+        <span class="badge ${penaltyClass}">${criteriaData.totalPenalty}</span>
+      </div>`;
+    }
+
+    html += '</div></div></div>';
+
+    // Right column - Commits analysis
+    html += '<div class="col-md-6">';
+    html += '<div class="card h-100">';
+    html += '<div class="card-header bg-info text-white"><i class="fas fa-code-branch me-2"></i>Análisis de Commits</div>';
+    html += '<div class="card-body">';
+
+    if (criteriaData.commits && Array.isArray(criteriaData.commits)) {
+      const totalCommits = criteriaData.commits.length;
+      const onTimeCommits = criteriaData.commits.filter((c: any) => c.onTime).length;
+      const lateCommits = totalCommits - onTimeCommits;
+
+      html += `<div class="metric-item mb-2">
+        <strong>Total commits:</strong> 
+        <span class="badge bg-primary">${totalCommits}</span>
+      </div>`;
+
+      html += `<div class="metric-item mb-2">
+        <strong>A tiempo:</strong> 
+        <span class="badge bg-success">${onTimeCommits}</span>
+      </div>`;
+
+      html += `<div class="metric-item mb-2">
+        <strong>Tardíos:</strong> 
+        <span class="badge bg-warning">${lateCommits}</span>
+      </div>`;
+
+      // Show percentage if we have commits
+      if (totalCommits > 0) {
+        const onTimePercentage = Math.round((onTimeCommits / totalCommits) * 100);
+        const percentageClass = onTimePercentage >= 80 ? 'bg-success' : onTimePercentage >= 60 ? 'bg-warning' : 'bg-danger';
+        html += `<div class="metric-item mb-2">
+          <strong>% A tiempo:</strong> 
+          <span class="badge ${percentageClass}">${onTimePercentage}%</span>
+        </div>`;
+      }
+    } else {
+      html += '<div class="alert alert-warning"><small>No se encontraron datos de commits</small></div>';
+    }
+
+    html += '</div></div></div>';
+    html += '</div>';
+
+    // Additional details if available
+    if (criteriaData.evaluationMethod) {
+      html += '<div class="row mt-3">';
+      html += '<div class="col-12">';
+      html += '<div class="card">';
+      html += '<div class="card-header bg-secondary text-white"><i class="fas fa-info-circle me-2"></i>Información Adicional</div>';
+      html += '<div class="card-body">';
+      html += `<div class="metric-item">
+        <strong>Método de evaluación:</strong> 
+        <span class="badge bg-light text-dark">${criteriaData.evaluationMethod}</span>
+      </div>`;
+      html += '</div></div></div></div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
   private formatGenericCriteriaDisplay(criteriaData: any, evaluationType?: string): string {
     if (!criteriaData || typeof criteriaData !== 'object') {
       return '<div class="alert alert-warning">Datos de criterios inválidos</div>';
     }
 
     let html = '<div class="criteria-container">';
-    
+
     // Add evaluation type header if available
     if (evaluationType) {
       html += `<div class="criteria-header mb-3">
-        <h6 class="text-primary"><i class="fas fa-clipboard-list me-2"></i>Criterios de Evaluación - ${this.getEvaluationTypeLabel(evaluationType)}</h6>
+        <h6 class="text-primary"><i class="fas fa-clipboard-list me-2"></i>Criterios de Evaluación - ${evaluationType}</h6>
       </div>`;
     }
 
-    // Check if it's a structured evaluation result
-    if (this.isStructuredEvaluationResult(criteriaData)) {
-      html += this.formatStructuredEvaluationResult(criteriaData);
-    } else {
-      // Format as generic key-value pairs
-      html += this.formatKeyValuePairs(criteriaData);
+    // Handle specific evaluation types with custom formatters
+    switch (evaluationType) {
+      case 'GOOD_PRACTICES_CHECKSTYLE':
+        html += this.formatCheckstyleCriteria(criteriaData);
+        break;
+
+      case 'SCHEDULER_GITHUB':
+        html += this.formatGithubSchedule(criteriaData);
+        break;
+
+      default:
+        // Format as generic key-value pairs for manual evaluations and others
+        html += this.formatKeyValuePairs(criteriaData);
+        break;
     }
-    
+
     html += '</div>';
-    return html;
-  }
-
-  private isStructuredEvaluationResult(data: any): boolean {
-    // Check if it has common evaluation result properties
-    return data.hasOwnProperty('finalScore') || 
-           data.hasOwnProperty('score') || 
-           data.hasOwnProperty('commits') || 
-           data.hasOwnProperty('evaluationMethod') ||
-           data.hasOwnProperty('criteria') ||
-           data.hasOwnProperty('metrics');
-  }
-
-  private formatStructuredEvaluationResult(data: any): string {
-    let html = '<div class="row">';
-    
-    // Left column - Metrics
-    html += '<div class="col-md-6"><div class="card h-100">';
-    html += '<div class="card-header bg-primary text-white"><i class="fas fa-chart-line me-2"></i>Métricas</div>';
-    html += '<div class="card-body">';
-    
-    // Display score information
-    if (data.finalScore !== undefined || data.score !== undefined) {
-      const score = data.finalScore || data.score;
-      html += `<div class="metric-item mb-2">
-        <strong>Puntuación:</strong> 
-        <span class="badge bg-success fs-6">${score}/5</span>
-      </div>`;
-    }
-    
-    // Display other metrics
-    const metricsToShow = ['lateDays', 'totalPenalty', 'isLate', 'evaluationMethod', 'codeQuality', 'performance'];
-    metricsToShow.forEach(key => {
-      if (data[key] !== undefined) {
-        const value = data[key];
-        const badgeClass = this.getBadgeClassForMetric(key, value);
-        const displayValue = typeof value === 'boolean' ? (value ? 'Sí' : 'No') : value;
-        html += `<div class="metric-item mb-2">
-          <strong>${this.formatKeyName(key)}:</strong> 
-          <span class="badge ${badgeClass}">${displayValue}</span>
-        </div>`;
-      }
-    });
-    
-    html += '</div></div></div>';
-    
-    // Right column - Details
-    html += '<div class="col-md-6"><div class="card h-100">';
-    html += '<div class="card-header bg-info text-white"><i class="fas fa-info-circle me-2"></i>Detalles</div>';
-    html += '<div class="card-body">';
-    
-    // Display arrays and complex objects
-    if (data.commits && Array.isArray(data.commits)) {
-      const commitsCount = data.commits.length;
-      const onTimeCommits = data.commits.filter((c: any) => c.onTime).length;
-      html += `<div class="metric-item mb-2">
-        <strong>Total commits:</strong> <span class="badge bg-primary">${commitsCount}</span>
-      </div>`;
-      html += `<div class="metric-item mb-2">
-        <strong>A tiempo:</strong> <span class="badge bg-success">${onTimeCommits}</span>
-      </div>`;
-      html += `<div class="metric-item mb-2">
-        <strong>Tardíos:</strong> <span class="badge bg-warning">${commitsCount - onTimeCommits}</span>
-      </div>`;
-    }
-    
-    if (data.criteria && typeof data.criteria === 'object') {
-      Object.entries(data.criteria).forEach(([key, value]) => {
-        html += `<div class="metric-item mb-2">
-          <strong>${this.formatKeyName(key)}:</strong> ${value}
-        </div>`;
-      });
-    }
-    
-    // Display any other relevant information
-    const excludeKeys = ['finalScore', 'score', 'lateDays', 'totalPenalty', 'isLate', 'evaluationMethod', 'commits', 'criteria', 'codeQuality', 'performance'];
-    Object.entries(data).forEach(([key, value]) => {
-      if (!excludeKeys.includes(key) && value !== null && value !== undefined) {
-        if (typeof value === 'object' && !Array.isArray(value)) {
-          html += `<div class="metric-item mb-2">
-            <strong>${this.formatKeyName(key)}:</strong><br>
-            <small class="text-muted">${JSON.stringify(value, null, 2)}</small>
-          </div>`;
-        } else if (!Array.isArray(value)) {
-          html += `<div class="metric-item mb-2">
-            <strong>${this.formatKeyName(key)}:</strong> ${value}
-          </div>`;
-        }
-      }
-    });
-    
-    html += '</div></div></div>';
-    html += '</div>';
-    
     return html;
   }
 
   private formatKeyValuePairs(data: any, level: number = 0): string {
     let html = '';
     const indent = '  '.repeat(level);
-    
+
     if (level === 0) {
       html += '<div class="card"><div class="card-header bg-secondary text-white">';
       html += '<i class="fas fa-list me-2"></i>Criterios de Evaluación</div>';
       html += '<div class="card-body">';
     }
-    
+
     Object.entries(data).forEach(([key, value]) => {
       if (value === null || value === undefined) return;
-      
+
       html += `<div class="criteria-item mb-2" style="margin-left: ${level * 20}px;">`;
-      
+
       if (typeof value === 'object' && !Array.isArray(value)) {
         html += `<strong class="text-primary">${this.formatKeyName(key)}:</strong>`;
         html += '<div class="ms-3">';
@@ -556,14 +729,14 @@ export class EvaluationComponent implements OnInit {
         html += `<strong class="text-primary">${this.formatKeyName(key)}:</strong> `;
         html += `<span class="badge ${badgeClass}">${value}</span>`;
       }
-      
+
       html += '</div>';
     });
-    
+
     if (level === 0) {
       html += '</div></div>';
     }
-    
+
     return html;
   }
 
@@ -580,7 +753,7 @@ export class EvaluationComponent implements OnInit {
     if (typeof value === 'boolean') {
       return value ? 'bg-success' : 'bg-danger';
     }
-    
+
     if (typeof value === 'number') {
       if (key.includes('score') || key.includes('Score')) {
         if (value >= 4) return 'bg-success';
@@ -591,7 +764,7 @@ export class EvaluationComponent implements OnInit {
         return value > 0 ? 'bg-danger' : 'bg-success';
       }
     }
-    
+
     return 'bg-secondary';
   }
 
@@ -599,13 +772,13 @@ export class EvaluationComponent implements OnInit {
     if (typeof value === 'boolean') {
       return value ? 'bg-success' : 'bg-danger';
     }
-    
+
     if (typeof value === 'number') {
       if (value >= 4) return 'bg-success';
       if (value >= 2) return 'bg-warning';
       if (value < 2 && value >= 0) return 'bg-danger';
     }
-    
+
     return 'bg-light text-dark';
   }
 
@@ -618,7 +791,7 @@ export class EvaluationComponent implements OnInit {
 
   getTypeBadgeClass(type: string): string {
     if (!type) return 'bg-secondary';
-    
+
     const lowerType = type.toLowerCase();
     if (lowerType.includes('auto') || lowerType.includes('scheduler') || lowerType.includes('good_practices')) {
       return 'bg-info';
@@ -626,25 +799,11 @@ export class EvaluationComponent implements OnInit {
     return 'bg-secondary';
   }
 
-  getEvaluationTypeLabel(type: string): string {
-    if (!type) return 'Sin tipo';
-    
-    const typeLabels: { [key: string]: string } = {
-      'MANUAL': 'Manual',
-      'AUTOMATIC': 'Automática',
-      'SCHEDULER': 'Cronograma',
-      'GOOD_PRACTICES': 'Buenas Prácticas',
-      'GOOD_PRACTICES_AI': 'Buenas Prácticas con IA'
-    };
-    
-    return typeLabels[type] || type;
-  }
-
   formatEvaluationDate(date: string | Date | number[] | undefined): string {
     if (!date) return '';
-    
+
     let parsedDate: Date;
-    
+
     if (Array.isArray(date)) {
       // Handle number array format [year, month, day, hour, minute, second]
       parsedDate = new Date(date[0], date[1] - 1, date[2], date[3] || 0, date[4] || 0, date[5] || 0);
@@ -653,7 +812,7 @@ export class EvaluationComponent implements OnInit {
     } else {
       parsedDate = date;
     }
-    
+
     return parsedDate.toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -665,7 +824,7 @@ export class EvaluationComponent implements OnInit {
 
   private parseEvaluationDate(date: string | Date | number[] | undefined): Date | null {
     if (!date) return null;
-    
+
     if (Array.isArray(date)) {
       // Handle number array format [year, month, day, hour, minute, second]
       return new Date(date[0], date[1] - 1, date[2], date[3] || 0, date[4] || 0, date[5] || 0);
@@ -677,13 +836,68 @@ export class EvaluationComponent implements OnInit {
   }
 
   downloadEvaluations() {
-    // Implementation for downloading evaluations
-    console.log('Downloading all evaluations...');
+    // Descargar todas las evaluaciones en CSV con codificación UTF-8 (BOM)
+    const data = this.evaluations.map(e => ({
+      ID: e.id,
+      Asignación: e.assignmentTitle || '',
+      Equipo: e.teamName || '',
+      Puntuación: e.score,
+      Tipo: e.evaluationType,
+      Evaluador: e.evaluatorName || '',
+      Fecha: this.formatEvaluationDate(e.evaluationDate),
+      'URL Entrega': e.submissionUrl || ''
+    }));
+    this.exportToCsv('evaluaciones_todas.csv', data);
   }
 
   downloadFilteredEvaluations() {
-    // Implementation for downloading filtered evaluations
-    console.log('Downloading filtered evaluations...');
+    // Descargar evaluaciones filtradas en CSV con codificación UTF-8 (BOM)
+    const data = this.filteredEvaluations.map(e => ({
+      ID: e.id,
+      Asignación: e.assignmentTitle || '',
+      Equipo: e.teamName || '',
+      Puntuación: e.score,
+      Tipo: e.evaluationType,
+      Evaluador: e.evaluatorName || '',
+      Fecha: this.formatEvaluationDate(e.evaluationDate),
+      'URL Entrega': e.submissionUrl || ''
+    }));
+    this.exportToCsv('evaluaciones_filtradas.csv', data);
+  }
+
+  private exportToCsv(filename: string, rows: any[]) {
+    if (!rows || !rows.length) {
+      return;
+    }
+    const separator = ',';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+      keys.join(separator) +
+      '\n' +
+      rows
+        .map(row =>
+          keys
+            .map(k => {
+              let cell = row[k] == null ? '' : row[k].toString();
+              cell = cell.replace(/"/g, '""');
+              return `"${cell}"`;
+            })
+            .join(separator)
+        )
+        .join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const nav: any = navigator;
+    if (nav.msSaveBlob) {
+      nav.msSaveBlob(blob, filename);
+    } else {
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = filename;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    }
   }
 
   private showSuccess(message: string) {
@@ -707,10 +921,10 @@ export class EvaluationComponent implements OnInit {
   }
 
   // =================== ORIGINALITY ANALYSIS METHODS ===================
-  
+
   toggleOriginalitySection() {
     this.showOriginalitySection = !this.showOriginalitySection;
-    
+
     // Set default assignment if none selected
     if (this.showOriginalitySection && !this.selectedAssignmentForOriginality && this.assignments.length > 0) {
       this.selectedAssignmentForOriginality = this.assignments[0];
@@ -723,7 +937,7 @@ export class EvaluationComponent implements OnInit {
     }
 
     // Get submissions for the selected assignment
-    const assignmentSubmissions = this.submissions.filter(submission => 
+    const assignmentSubmissions = this.submissions.filter(submission =>
       submission.assignmentId === this.selectedAssignmentForOriginality!.id
     );
 
