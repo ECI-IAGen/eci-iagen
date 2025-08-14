@@ -400,4 +400,58 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/excel/format-info`)
       .pipe(catchError(this.handleError));
   }
+
+  // =================== REPORTES DE PLAGIO ===================
+  
+  /**
+   * Obtiene el contenido HTML del reporte de plagio usando el nuevo visor
+   */
+  getPlagiarismReportHtml(sessionId: string): Observable<string> {
+    const reportUrl = `http://localhost:8082/reports/viewer/${sessionId}`;
+    return this.http.get(reportUrl, { responseType: 'text' })
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Verifica si un reporte de plagio existe
+   */
+  checkPlagiarismReportExists(sessionId: string): Observable<boolean> {
+    const checkUrl = `http://localhost:8082/reports/exists/${sessionId}`;
+    return this.http.get<boolean>(checkUrl)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Obtiene la URL directa del reporte para abrir en nueva ventana usando el nuevo visor
+   */
+  getPlagiarismReportUrl(sessionId: string): string {
+    return `http://localhost:8082/reports/viewer/${sessionId}`;
+  }
+
+  /**
+   * Extrae el sessionId de una URL de reporte
+   * Soporta múltiples formatos: /reports/viewer/{sessionId}, /reports/view/{sessionId} y /reports/report_{sessionId}/index.html
+   */
+  extractSessionIdFromReportUrl(reportUrl: string): string | null {
+    if (!reportUrl) return null;
+    
+    // Formato: /reports/viewer/{sessionId} (nuevo formato)
+    let match = reportUrl.match(/\/reports\/viewer\/([^\/]+)/);
+    if (match) return match[1];
+    
+    // Formato: /reports/view/{sessionId}
+    match = reportUrl.match(/\/reports\/view\/([^\/]+)/);
+    if (match) return match[1];
+    
+    // Formato: /reports/report_{sessionId}/index.html
+    match = reportUrl.match(/\/reports\/report_([^\/]+)\/index\.html/);
+    if (match) return match[1];
+    
+    // Formato: /reports/report_{sessionId}/
+    match = reportUrl.match(/\/reports\/report_([^\/]+)\/?$/);
+    if (match) return match[1];
+    
+    console.warn('Could not extract session ID from report URL:', reportUrl);
+    return null;
+  }
 }

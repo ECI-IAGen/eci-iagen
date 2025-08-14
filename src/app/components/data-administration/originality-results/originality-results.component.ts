@@ -16,7 +16,7 @@ interface SubmissionInfo {
 interface ComparisonResult {
   submissionId1: number;
   submissionId2: number;
-  similarity: number;
+  similarity: number; // Valor entre 0 y 1 que viene del backend
 }
 
 interface OriginalityResponse {
@@ -42,6 +42,9 @@ export class OriginalityResultsComponent implements OnInit {
   error: string | null = null;
   showRawJson = false;
   jplagHealthy = false;
+  reportUrl: string | null = null;
+  showReportModal = false;
+  reportHtmlContent: string = '';
 
   constructor(private apiService: ApiService) {}
 
@@ -91,6 +94,7 @@ export class OriginalityResultsComponent implements OnInit {
       next: (response: any) => {
         console.log('Originality analysis response:', response);
         this.originalityResults = response;
+        this.reportUrl = response.reportUrl; // Guardar la URL del reporte
         this.loading = false;
         
         // Sort comparisons by similarity (highest first)
@@ -110,24 +114,77 @@ export class OriginalityResultsComponent implements OnInit {
     this.showRawJson = !this.showRawJson;
   }
 
+  // =================== MÉTODOS DE CONVERSIÓN SIMILARIDAD -> ORIGINALIDAD ===================
+
+  /**
+   * Convierte la similaridad (0-1) a porcentaje de similaridad (0-100%)
+   */
+  getSimilarityPercentage(similarity: number): number {
+    return similarity * 100;
+  }
+
+  /**
+   * Convierte la similaridad (0-1) a porcentaje de originalidad (100%-0%)
+   */
+  getOriginalityPercentage(similarity: number): number {
+    return 100 - (similarity * 100);
+  }
+
+  /**
+   * Obtiene el color basado en el porcentaje de originalidad
+   * Alto originalidad = Verde, Bajo originalidad = Rojo
+   */
+  getOriginalityColor(similarity: number): string {
+    const originalityPercentage = this.getOriginalityPercentage(similarity);
+    if (originalityPercentage <= 20) return '#dc3545'; // Rojo - Baja originalidad (alta similaridad)
+    if (originalityPercentage <= 40) return '#fd7e14'; // Naranja - Originalidad media-baja
+    if (originalityPercentage <= 60) return '#ffc107'; // Amarillo - Originalidad media
+    return '#28a745'; // Verde - Alta originalidad
+  }
+
+  /**
+   * Obtiene el nivel de originalidad basado en la similaridad
+   */
+  getOriginalityLevel(similarity: number): string {
+    const originalityPercentage = this.getOriginalityPercentage(similarity);
+    if (originalityPercentage <= 20) return 'BAJA';
+    if (originalityPercentage <= 40) return 'MEDIA-BAJA';
+    if (originalityPercentage <= 60) return 'MEDIA';
+    return 'ALTA';
+  }
+
+  /**
+   * Obtiene la etiqueta de originalidad
+   */
+  getOriginalityLabel(similarity: number): string {
+    const originalityPercentage = this.getOriginalityPercentage(similarity);
+    if (originalityPercentage <= 20) return 'Baja originalidad - Posible plagio';
+    if (originalityPercentage <= 40) return 'Originalidad media-baja - Revisar';
+    if (originalityPercentage <= 60) return 'Originalidad media - Aceptable';
+    return 'Alta originalidad - Excelente';
+  }
+
   getSimilarityColor(similarity: number): string {
-    if (similarity >= 80) return '#dc3545'; // Rojo - Alto riesgo
-    if (similarity >= 60) return '#fd7e14'; // Naranja - Riesgo medio
-    if (similarity >= 40) return '#ffc107'; // Amarillo - Riesgo bajo
+    const similarityPercentage = this.getSimilarityPercentage(similarity);
+    if (similarityPercentage >= 80) return '#dc3545'; // Rojo - Alto riesgo
+    if (similarityPercentage >= 60) return '#fd7e14'; // Naranja - Riesgo medio
+    if (similarityPercentage >= 40) return '#ffc107'; // Amarillo - Riesgo bajo
     return '#28a745'; // Verde - Sin riesgo
   }
 
   getSimilarityLevel(similarity: number): string {
-    if (similarity >= 80) return 'ALTO';
-    if (similarity >= 60) return 'MEDIO';
-    if (similarity >= 40) return 'BAJO';
+    const similarityPercentage = this.getSimilarityPercentage(similarity);
+    if (similarityPercentage >= 80) return 'ALTO';
+    if (similarityPercentage >= 60) return 'MEDIO';
+    if (similarityPercentage >= 40) return 'BAJO';
     return 'MÍNIMO';
   }
 
   getSimilarityLabel(similarity: number): string {
-    if (similarity >= 80) return 'Alto riesgo de plagio';
-    if (similarity >= 60) return 'Riesgo medio de plagio';
-    if (similarity >= 40) return 'Riesgo bajo de plagio';
+    const similarityPercentage = this.getSimilarityPercentage(similarity);
+    if (similarityPercentage >= 80) return 'Alto riesgo de plagio';
+    if (similarityPercentage >= 60) return 'Riesgo medio de plagio';
+    if (similarityPercentage >= 40) return 'Riesgo bajo de plagio';
     return 'Sin riesgo aparente';
   }
 
@@ -147,9 +204,10 @@ export class OriginalityResultsComponent implements OnInit {
     }
 
     return this.originalityResults.comparisons.reduce((acc, comparison) => {
-      if (comparison.similarity >= 80) acc.high++;
-      else if (comparison.similarity >= 60) acc.medium++;
-      else if (comparison.similarity >= 40) acc.low++;
+      const similarityPercentage = this.getSimilarityPercentage(comparison.similarity);
+      if (similarityPercentage >= 80) acc.high++;
+      else if (similarityPercentage >= 60) acc.medium++;
+      else if (similarityPercentage >= 40) acc.low++;
       else acc.minimal++;
       return acc;
     }, { high: 0, medium: 0, low: 0, minimal: 0 });
@@ -157,19 +215,19 @@ export class OriginalityResultsComponent implements OnInit {
 
   getOverallRiskLevel(): string {
     const summary = this.getRiskSummary();
-    if (summary.high > 0) return 'ALTO';
-    if (summary.medium > 0) return 'MEDIO';
-    if (summary.low > 0) return 'BAJO';
-    return 'MÍNIMO';
+    if (summary.high > 0) return 'BAJA'; // Alta similitud = Baja originalidad
+    if (summary.medium > 0) return 'MEDIA';
+    if (summary.low > 0) return 'ACEPTABLE';
+    return 'ALTA'; // Baja similitud = Alta originalidad
   }
 
   getOverallRiskColor(): string {
     const level = this.getOverallRiskLevel();
     switch (level) {
-      case 'ALTO': return '#dc3545';
-      case 'MEDIO': return '#fd7e14';
-      case 'BAJO': return '#ffc107';
-      default: return '#28a745';
+      case 'BAJA': return '#dc3545'; // Rojo para baja originalidad
+      case 'MEDIA': return '#fd7e14'; // Naranja para media originalidad
+      case 'ACEPTABLE': return '#ffc107'; // Amarillo para originalidad aceptable
+      default: return '#28a745'; // Verde para alta originalidad
     }
   }
 
@@ -191,16 +249,89 @@ export class OriginalityResultsComponent implements OnInit {
   private generateCSVContent(): string {
     if (!this.originalityResults) return '';
 
-    const headers = ['Equipo 1', 'Equipo 2', 'Similitud (%)', 'Nivel de Riesgo', 'URL Repositorio 1', 'URL Repositorio 2'];
+    const headers = ['Equipo 1', 'Equipo 2', 'Similaridad (%)', 'Originalidad (%)', 'Nivel de Riesgo', 'URL Repositorio 1', 'URL Repositorio 2'];
     const rows = this.originalityResults.comparisons.map(comparison => [
       this.getTeamName(comparison.submissionId1),
       this.getTeamName(comparison.submissionId2),
-      comparison.similarity.toFixed(1),
+      this.getSimilarityPercentage(comparison.similarity).toFixed(1),
+      this.getOriginalityPercentage(comparison.similarity).toFixed(1),
       this.getSimilarityLevel(comparison.similarity),
       this.getRepositoryUrl(comparison.submissionId1),
       this.getRepositoryUrl(comparison.submissionId2)
     ]);
 
     return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  }
+
+  // =================== MÉTODOS PARA REPORTES HTML ===================
+
+  /**
+   * Abre el reporte HTML en una nueva ventana
+   */
+  openReportInNewWindow() {
+    if (!this.reportUrl) {
+      console.error('No report URL available');
+      return;
+    }
+
+    const sessionId = this.apiService.extractSessionIdFromReportUrl(this.reportUrl);
+    if (sessionId) {
+      const reportWindow = window.open(
+        this.apiService.getPlagiarismReportUrl(sessionId),
+        '_blank',
+        'width=1200,height=800,scrollbars=yes,resizable=yes'
+      );
+      
+      if (!reportWindow) {
+        alert('Por favor, habilita las ventanas emergentes para ver el reporte completo.');
+      }
+    }
+  }
+
+  /**
+   * Muestra el reporte HTML en un modal
+   */
+  async showReport() {
+    if (!this.reportUrl) {
+      console.error('No report URL available');
+      return;
+    }
+
+    const sessionId = this.apiService.extractSessionIdFromReportUrl(this.reportUrl);
+    if (!sessionId) {
+      console.error('Could not extract session ID from report URL');
+      return;
+    }
+
+    try {
+      // Verificar que el reporte existe
+      const reportExists = await this.apiService.checkPlagiarismReportExists(sessionId).toPromise();
+      if (!reportExists) {
+        this.error = 'El reporte no está disponible o ha expirado.';
+        return;
+      }
+
+      // Obtener el contenido HTML
+      this.reportHtmlContent = await this.apiService.getPlagiarismReportHtml(sessionId).toPromise() || '';
+      this.showReportModal = true;
+    } catch (error) {
+      console.error('Error loading report:', error);
+      this.error = 'Error al cargar el reporte detallado.';
+    }
+  }
+
+  /**
+   * Cierra el modal del reporte
+   */
+  closeReportModal() {
+    this.showReportModal = false;
+    this.reportHtmlContent = '';
+  }
+
+  /**
+   * Verifica si hay un reporte disponible
+   */
+  hasReport(): boolean {
+    return !!this.reportUrl;
   }
 }
