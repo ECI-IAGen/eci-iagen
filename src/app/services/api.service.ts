@@ -395,6 +395,14 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  /**
+   * Obtiene información del HTML de una comparación específica
+   */
+  getComparisonHtml(sessionId: string, submissionId1: number, submissionId2: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/plagiarism/comparison/${sessionId}/${submissionId1}-${submissionId2}`)
+      .pipe(catchError(this.handleError));
+  }
+
   // =================== IMPORTACIÓN EXCEL ===================
   
   /**
@@ -525,5 +533,32 @@ export class ApiService {
     
     console.warn('Could not extract session ID from report URL:', reportUrl);
     return null;
+  }
+
+  // =================== REPORTES HTML INDIVIDUALES ===================
+  
+  /**
+   * Obtiene la URL para acceder al HTML individual de una comparación
+   */
+  getComparisonHtmlUrl(comparisonHtmlUrl: string): string {
+    // El comparisonHtmlUrl viene en formato: /reports/comparison/{sessionId}/{comparisonId}.html
+    // Lo convertimos a URL completa del API Gateway
+    return `${this.baseUrl}/jplag${comparisonHtmlUrl}`;
+  }
+
+  /**
+   * Lista todas las comparaciones disponibles para una sesión
+   */
+  listComparisonHtmls(sessionId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/jplag/reports/comparison/${sessionId}/list`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Abre una comparación HTML individual en una nueva ventana
+   */
+  openComparisonHtml(comparisonHtmlUrl: string): void {
+    const fullUrl = this.getComparisonHtmlUrl(comparisonHtmlUrl);
+    window.open(fullUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
   }
 }
