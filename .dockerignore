@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.gitignore
+*.md
+.vscode
+.angular
+.editorconfig
+karma.conf.js
+.browserslistrc
+*.spec.ts
+coverage
+.env
+.env.local
