@@ -28,7 +28,7 @@ COPY --from=build /app/package*.json ./
 RUN npm ci --only=production --legacy-peer-deps
 
 # Expose the application port
-EXPOSE 4000
+EXPOSE 4200
 
 # Set environment variable for production
 ENV NODE_ENV=production
