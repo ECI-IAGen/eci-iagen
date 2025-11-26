@@ -376,18 +376,98 @@ export class ApiService {
       .pipe(catchError(this.handleError));
   }
 
+  /**
+   * Generate automatic team feedback for a submission
+   */
+  generateTeamFeedback(submissionId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/feedbacks/auto/equipo/${submissionId}`, {})
+      .pipe(catchError(this.handleError));
+  }
+
   // =================== ANÁLISIS DE ORIGINALIDAD (JPLAG) ===================
   checkOriginality(assignmentData: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/jplag/detect`, assignmentData, this.httpOptions)
+    return this.http.post<any>(`${this.baseUrl}/plagiarism/detect/${assignmentData.assignmentId}`, assignmentData, this.httpOptions)
       .pipe(catchError(this.handleError));
   }
 
   checkJPlagHealth(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/jplag/health`)
+    return this.http.get<any>(`${this.baseUrl}/plagiarism/health`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Obtiene información del HTML de una comparación específica
+   */
+  getComparisonHtml(sessionId: string, submissionId1: number, submissionId2: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/plagiarism/comparison/${sessionId}/${submissionId1}-${submissionId2}`)
       .pipe(catchError(this.handleError));
   }
 
   // =================== IMPORTACIÓN EXCEL ===================
+  
+  /**
+   * Import complete Excel file with multiple sheets
+   */
+  importCompleteExcel(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.http.post<any>(`${this.baseUrl}/excel/import/complete`, formData)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Validate Excel file format without processing data
+   */
+  validateCompleteExcelFormat(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.http.post<any>(`${this.baseUrl}/excel/validate/complete`, formData)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get complete format information for Excel files
+   */
+  getCompleteFormatInfo(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/excel/format-info/complete`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get specific format information for Groups sheet
+   */
+  getGroupsFormatInfo(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/excel/format-info/groups`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get specific format information for Entregas sheet
+   */
+  getEntregasFormatInfo(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/excel/format-info/entregas`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get specific format information for Estudiantes sheet
+   */
+  getEstudiantesFormatInfo(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/excel/format-info/estudiantes`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get specific format information for Equipos sheet
+   */
+  getEquiposFormatInfo(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/excel/format-info/equipos`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // Legacy methods - kept for backward compatibility
   importExcel(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
@@ -453,5 +533,32 @@ export class ApiService {
     
     console.warn('Could not extract session ID from report URL:', reportUrl);
     return null;
+  }
+
+  // =================== REPORTES HTML INDIVIDUALES ===================
+  
+  /**
+   * Obtiene la URL para acceder al HTML individual de una comparación
+   */
+  getComparisonHtmlUrl(comparisonHtmlUrl: string): string {
+    // El comparisonHtmlUrl viene en formato: /reports/comparison/{sessionId}/{comparisonId}.html
+    // Lo convertimos a URL completa del API Gateway
+    return `${this.baseUrl}/jplag${comparisonHtmlUrl}`;
+  }
+
+  /**
+   * Lista todas las comparaciones disponibles para una sesión
+   */
+  listComparisonHtmls(sessionId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/jplag/reports/comparison/${sessionId}/list`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Abre una comparación HTML individual en una nueva ventana
+   */
+  openComparisonHtml(comparisonHtmlUrl: string): void {
+    const fullUrl = this.getComparisonHtmlUrl(comparisonHtmlUrl);
+    window.open(fullUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
   }
 }

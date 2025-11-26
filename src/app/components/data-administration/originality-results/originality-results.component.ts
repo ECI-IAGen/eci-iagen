@@ -17,6 +17,13 @@ interface ComparisonResult {
   submissionId1: number;
   submissionId2: number;
   similarity: number; // Valor entre 0 y 1 que viene del backend
+  comparisonHtmlUrl?: string; // URL del HTML de comparación individual
+  submission1?: string; // Nombre de la primera submission
+  submission2?: string; // Nombre de la segunda submission
+  team1?: string; // Nombre del primer equipo
+  team2?: string; // Nombre del segundo equipo
+  matchedTokens?: number; // Número de tokens coincidentes
+  status?: string; // Estado de la comparación
 }
 
 interface OriginalityResponse {
@@ -94,12 +101,30 @@ export class OriginalityResultsComponent implements OnInit {
       next: (response: any) => {
         console.log('Originality analysis response:', response);
         this.originalityResults = response;
+        
+        // Compatibilidad: si viene "similarities" en lugar de "comparisons", mapearla
+        if (response.similarities && !response.comparisons) {
+          response.comparisons = response.similarities;
+          this.originalityResults = response;
+        }
+        
         this.reportUrl = response.reportUrl; // Guardar la URL del reporte
         this.loading = false;
         
         // Sort comparisons by similarity (highest first)
-        if (this.originalityResults && this.originalityResults.comparisons) {
+        if (this.originalityResults && this.originalityResults.comparisons && Array.isArray(this.originalityResults.comparisons)) {
           this.originalityResults.comparisons.sort((a, b) => b.similarity - a.similarity);
+          
+          // Debug: verificar si las comparaciones tienen comparisonHtmlUrl
+          console.log('Comparisons with HTML URLs:');
+          this.originalityResults.comparisons.forEach((comp: any, index: number) => {
+            console.log(`Comparison ${index}:`, {
+              submissionId1: comp.submissionId1,
+              submissionId2: comp.submissionId2,
+              comparisonHtmlUrl: comp.comparisonHtmlUrl,
+              hasHtmlUrl: !!comp.comparisonHtmlUrl
+            });
+          });
         }
       },
       error: (error: any) => {
@@ -199,7 +224,7 @@ export class OriginalityResultsComponent implements OnInit {
   }
 
   getRiskSummary(): { high: number, medium: number, low: number, minimal: number } {
-    if (!this.originalityResults?.comparisons) {
+    if (!this.originalityResults?.comparisons || !Array.isArray(this.originalityResults.comparisons)) {
       return { high: 0, medium: 0, low: 0, minimal: 0 };
     }
 
@@ -247,7 +272,7 @@ export class OriginalityResultsComponent implements OnInit {
   }
 
   private generateCSVContent(): string {
-    if (!this.originalityResults) return '';
+    if (!this.originalityResults || !this.originalityResults.comparisons || !Array.isArray(this.originalityResults.comparisons)) return '';
 
     const headers = ['Equipo 1', 'Equipo 2', 'Similaridad (%)', 'Originalidad (%)', 'Nivel de Riesgo', 'URL Repositorio 1', 'URL Repositorio 2'];
     const rows = this.originalityResults.comparisons.map(comparison => [
@@ -333,5 +358,34 @@ export class OriginalityResultsComponent implements OnInit {
    */
   hasReport(): boolean {
     return !!this.reportUrl;
+  }
+
+  /**
+   * Abre el HTML de comparación individual en una nueva ventana
+   */
+  openComparisonHtml(comparison: any) {
+    console.log('Opening comparison HTML for:', comparison);
+    
+    if (!comparison.comparisonHtmlUrl) {
+      alert('Análisis detallado no disponible para esta comparación.');
+      console.warn('No comparisonHtmlUrl found in comparison:', comparison);
+      return;
+    }
+
+    // Usar el servicio API para obtener la URL correcta del API Gateway
+    this.apiService.openComparisonHtml(comparison.comparisonHtmlUrl);
+  }
+
+  /**
+   * Método temporal para debugging - mostrar información de comparaciones
+   */
+  debugComparisons() {
+    console.log('=== DEBUG COMPARISONS ===');
+    console.log('originalityResults:', this.originalityResults);
+    if (this.originalityResults?.comparisons) {
+      this.originalityResults.comparisons.forEach((comp: any, index: number) => {
+        console.log(`Comparison ${index}:`, comp);
+      });
+    }
   }
 }

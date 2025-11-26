@@ -230,9 +230,33 @@ export class UserComponent implements OnInit {
     return 'Sin equipos';
   }
 
-  // Método placeholder para importar Excel
-  showExcelImportModal() {
-    console.log('Abrir modal de importar Excel');
-    this.showNotification('Funcionalidad en desarrollo', 'error');
+  // Método para descargar usuarios como CSV
+  downloadUsers() {
+    if (!this.users || this.users.length === 0) {
+      this.showNotification('No hay usuarios para exportar.', 'error');
+      return;
+    }
+    const columns = ['ID', 'Nombre', 'Email', 'Rol', 'Equipos'];
+    const rows = this.users.map(u => [
+      u.id,
+      u.name,
+      u.email || '',
+      u.roleName || '',
+      (u.teamNames || []).join(', ')
+    ]);
+    const csvContent = '\uFEFF' + [
+      columns.join(','),
+      ...rows.map(row => row.map(field => `"${(field + '').replace(/"/g, '""')}"`).join(','))
+    ].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'usuarios.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showNotification('Archivo CSV descargado correctamente.');
   }
 }

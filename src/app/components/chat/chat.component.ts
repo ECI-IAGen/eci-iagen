@@ -54,6 +54,8 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
   private isBrowser: boolean;
   private currentBotMessage: ChatMessage | null = null;
 
+  private temporalMessageCounter: number = 0; // Contador de mensajes temporales
+
   // Roles válidos
   private validRoles = ['coordinador', 'profesor'];
   roleDisplayName: string = 'Coordinador';
@@ -333,7 +335,12 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
           this.currentBotMessage.message = response.message;
         } else {
           // Si no está completo, ir acumulando el contenido (streaming)
-          this.currentBotMessage.message += "\n" + response.message;
+          this.temporalMessageCounter++;
+          if (this.temporalMessageCounter % 4 === 0) {
+            this.currentBotMessage.message = response.message;         
+          } else {
+            this.currentBotMessage.message += "\n" + response.message;
+          }
         }
       }
 

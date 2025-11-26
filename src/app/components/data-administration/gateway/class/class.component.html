@@ -17,7 +17,7 @@
       </div>
     </div>
   </div>
-  
+
   <div class="section-body">
     <div *ngIf="loading" class="loading-container">
       <div class="text-center py-5">
@@ -36,6 +36,7 @@
               <th scope="col">ID</th>
               <th scope="col">Clase</th>
               <th scope="col">Profesor</th>
+              <th scope="col">Prof. Lab</th>
               <th scope="col">Semestre</th>
               <th scope="col">Equipos</th>
               <th scope="col">Fecha Creación</th>
@@ -55,9 +56,16 @@
               </td>
               <td class="align-middle">
                 <div class="professor-info">
-                  <div class="professor-avatar">{{ getProfessorInitial(classItem.professorName) }}</div>
                   <span>{{ classItem.professorName || 'N/A' }}</span>
                 </div>
+              </td>
+              <td class="align-middle">
+                <div class="professor-info" *ngIf="classItem.laboratoryProfessorName; else noLabProfessor">
+                  <span>{{ classItem.laboratoryProfessorName }}</span>
+                </div>
+                <ng-template #noLabProfessor>
+                  <small class="text-muted">N/A</small>
+                </ng-template>
               </td>
               <td class="align-middle">
                 <span class="semester-badge">{{ classItem.semester || 'N/A' }}</span>
@@ -69,31 +77,19 @@
               <td class="align-middle">{{ formatDate(classItem.createdAt) }}</td>
               <td class="align-middle text-center">
                 <div class="btn-group btn-group-sm" role="group">
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-info" 
-                    (click)="viewClass(classItem)"
+                  <button type="button" class="btn btn-outline-info" (click)="viewClass(classItem)"
                     title="Ver detalles">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-success" 
-                    (click)="manageTeams(classItem)"
+                  <button type="button" class="btn btn-outline-success" (click)="manageTeams(classItem)"
                     title="Gestionar equipos">
                     <i class="fas fa-users"></i>
                   </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-primary" 
-                    (click)="openEditClassModal(classItem)"
+                  <button type="button" class="btn btn-outline-primary" (click)="openEditClassModal(classItem)"
                     title="Editar clase">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-danger" 
-                    (click)="confirmDeleteClass(classItem)"
+                  <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteClass(classItem)"
                     title="Eliminar clase">
                     <i class="fas fa-trash"></i>
                   </button>
@@ -102,7 +98,7 @@
             </tr>
           </tbody>
         </table>
-        
+
         <div *ngIf="classes.length === 0" class="empty-state">
           <div class="text-center py-5">
             <i class="fas fa-chalkboard text-muted mb-3" style="font-size: 3rem;"></i>
@@ -132,8 +128,8 @@
 </div>
 
 <!-- Modal para crear clase -->
-<div class="modal fade class-modal" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'" 
-     id="createClassModal" tabindex="-1" *ngIf="showCreateModal">
+<div class="modal fade class-modal" [class.show]="showCreateModal" [style.display]="showCreateModal ? 'block' : 'none'"
+  id="createClassModal" tabindex="-1" *ngIf="showCreateModal">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -148,21 +144,21 @@
             <h6><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
             <div class="mb-3">
               <label class="form-label">Nombre de la Clase</label>
-              <input type="text" class="form-control" [(ngModel)]="classForm.name" name="name" required 
-                     placeholder="Ej: Programación Avanzada 2025-1" />
+              <input type="text" class="form-control" [(ngModel)]="classForm.name" name="name" required
+                placeholder="Ej: Programación Avanzada 2025-1" />
             </div>
             <div class="mb-3">
               <label class="form-label">Descripción</label>
-              <textarea class="form-control" [(ngModel)]="classForm.description" name="description" rows="3" 
-                        placeholder="Descripción de la clase (opcional)"></textarea>
+              <textarea class="form-control" [(ngModel)]="classForm.description" name="description" rows="3"
+                placeholder="Descripción de la clase (opcional)"></textarea>
             </div>
             <div class="mb-3">
               <label class="form-label">Semestre</label>
               <input type="text" class="form-control" [(ngModel)]="classForm.semester" name="semester"
-                     placeholder="Ej: 2025-1" />
+                placeholder="Ej: 2025-1" />
             </div>
           </div>
-          
+
           <div class="class-form-section">
             <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
             <div class="mb-3">
@@ -173,15 +169,24 @@
               </select>
             </div>
           </div>
-          
+
+          <div class="class-form-section">
+            <h6><i class="fas fa-microscope me-2"></i>Profesor de Laboratorio</h6>
+            <div class="mb-3">
+              <label class="form-label">Seleccionar Profesor de Laboratorio (Opcional)</label>
+              <select class="form-select" [(ngModel)]="classForm.laboratoryProfessorId" name="laboratoryProfessorId">
+                <option value="">Seleccione un profesor de laboratorio</option>
+                <option *ngFor="let professor of professors" [value]="professor.id">{{ professor.name }}</option>
+              </select>
+            </div>
+          </div>
+
           <div class="class-form-section">
             <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
             <div class="team-selection-container">
               <div *ngFor="let team of teams" class="team-checkbox">
-                <input type="checkbox" 
-                       [checked]="isTeamSelected(team.id)"
-                       (change)="onTeamSelectionChange($event, team.id)"
-                       [id]="'team-create-' + team.id">
+                <input type="checkbox" [checked]="isTeamSelected(team.id)"
+                  (change)="onTeamSelectionChange($event, team.id)" [id]="'team-create-' + team.id">
                 <label [for]="'team-create-' + team.id">{{ team.name }}</label>
               </div>
               <p *ngIf="teams.length === 0" class="text-muted">No hay equipos disponibles</p>
@@ -203,8 +208,8 @@
 </div>
 
 <!-- Modal para editar clase -->
-<div class="modal fade class-modal" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'" 
-     id="editClassModal" tabindex="-1" *ngIf="showEditModal">
+<div class="modal fade class-modal" [class.show]="showEditModal" [style.display]="showEditModal ? 'block' : 'none'"
+  id="editClassModal" tabindex="-1" *ngIf="showEditModal">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -235,7 +240,7 @@
               <input type="text" class="form-control" [(ngModel)]="classForm.semester" name="semester" />
             </div>
           </div>
-          
+
           <div class="class-form-section">
             <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
             <div class="mb-3">
@@ -246,15 +251,24 @@
               </select>
             </div>
           </div>
-          
+
+          <div class="class-form-section">
+            <h6><i class="fas fa-microscope me-2"></i>Profesor de Laboratorio</h6>
+            <div class="mb-3">
+              <label class="form-label">Seleccionar Profesor de Laboratorio (Opcional)</label>
+              <select class="form-select" [(ngModel)]="classForm.laboratoryProfessorId" name="laboratoryProfessorId">
+                <option value="">Seleccione un profesor de laboratorio</option>
+                <option *ngFor="let professor of professors" [value]="professor.id">{{ professor.name }}</option>
+              </select>
+            </div>
+          </div>
+
           <div class="class-form-section">
             <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
             <div class="team-selection-container">
               <div *ngFor="let team of teams" class="team-checkbox">
-                <input type="checkbox" 
-                       [checked]="isTeamSelected(team.id)"
-                       (change)="onTeamSelectionChange($event, team.id)"
-                       [id]="'team-edit-' + team.id">
+                <input type="checkbox" [checked]="isTeamSelected(team.id)"
+                  (change)="onTeamSelectionChange($event, team.id)" [id]="'team-edit-' + team.id">
                 <label [for]="'team-edit-' + team.id">{{ team.name }}</label>
               </div>
             </div>
@@ -272,8 +286,8 @@
 </div>
 
 <!-- Modal para ver detalles de la clase -->
-<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" 
-     id="viewClassModal" tabindex="-1" *ngIf="showViewModal && selectedClass">
+<div class="modal fade" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'"
+  id="viewClassModal" tabindex="-1" *ngIf="showViewModal && selectedClass">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
@@ -292,7 +306,7 @@
             <div class="class-description">
               {{ selectedClass.description || 'Sin descripción disponible' }}
             </div>
-            
+
             <div class="class-stats">
               <div class="stat-item">
                 <div class="stat-number">{{ selectedClass.id }}</div>
@@ -307,20 +321,32 @@
                 <div class="stat-label">Creada</div>
               </div>
             </div>
-            
+
             <div class="mb-3">
               <h6><i class="fas fa-user-tie me-2"></i>Profesor</h6>
               <div class="professor-info">
-                <div class="professor-avatar">{{ getProfessorInitial(selectedClass.professorName) }}</div>
                 <span>{{ selectedClass.professorName || 'No asignado' }}</span>
               </div>
             </div>
-            
+
+            <div class="mb-3">
+              <h6><i class="fas fa-microscope me-2"></i>Profesor de Laboratorio</h6>
+              <div class="professor-info" *ngIf="selectedClass.laboratoryProfessorName; else noLabProfView">
+                <div class="professor-avatar">{{ getLaboratoryProfessorInitial(selectedClass.laboratoryProfessorName) }}
+                </div>
+                <span>{{ selectedClass.laboratoryProfessorName }}</span>
+              </div>
+              <ng-template #noLabProfView>
+                <span class="text-muted">No asignado</span>
+              </ng-template>
+            </div>
+
             <div class="mb-3">
               <h6><i class="fas fa-users me-2"></i>Equipos Inscritos</h6>
               <div class="team-list">
                 <span *ngFor="let teamName of selectedClass.teamNames" class="team-badge">{{ teamName }}</span>
-                <span *ngIf="!selectedClass.teamNames || selectedClass.teamNames.length === 0" class="text-muted">Sin equipos inscritos</span>
+                <span *ngIf="!selectedClass.teamNames || selectedClass.teamNames.length === 0" class="text-muted">Sin
+                  equipos inscritos</span>
               </div>
             </div>
           </div>
@@ -340,5 +366,5 @@
 </div>
 
 <!-- Modal backdrop -->
-<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" 
-     (click)="closeModal()"></div>
+<div class="modal-backdrop fade show" *ngIf="showCreateModal || showEditModal || showViewModal" (click)="closeModal()">
+</div>
