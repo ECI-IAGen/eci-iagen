@@ -148,7 +148,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
     }
 
     this.stompClient = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS('http://10.2.78.103:8080/ws'),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -276,7 +276,7 @@ export class ChatComponent implements OnInit, OnDestroy, AfterViewChecked, After
       // Mostrar mensaje de error al usuario
       const errorMessage: ChatMessage = {
         id: this.generateMessageId(),
-        message: `Error al enviar el mensaje. Verifica que el backend WebSocket esté ejecutándose en localhost:8080/ws. Error: ${error}`,
+        message: `Error al enviar el mensaje. Verifica que el backend WebSocket esté ejecutándose en 10.2.78.103:8080/ws. Error: ${error}`,
         sender: 'bot',
         timestamp: new Date(),
         status: 'completed'

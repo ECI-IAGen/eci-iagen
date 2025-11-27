@@ -7,7 +7,7 @@ import { catchError } from 'rxjs/operators';
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8080/api';
+  private baseUrl = 'http://10.2.78.103:8080/api';
   private httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
